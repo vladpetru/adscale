@@ -1,0 +1,2723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AdScale — Amazon PPC Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #111418;
+    --bg3: #181c22;
+    --bg4: #1e242d;
+    --border: #252b35;
+    --border2: #2e3640;
+    --text: #e8eaf0;
+    --text2: #8a94a6;
+    --text3: #535d6e;
+    --accent: #00c896;
+    --accent2: #00a87e;
+    --accent-dim: rgba(0,200,150,0.08);
+    --accent-dim2: rgba(0,200,150,0.15);
+    --red: #ff4d6a;
+    --red-dim: rgba(255,77,106,0.08);
+    --amber: #f5a623;
+    --amber-dim: rgba(245,166,35,0.08);
+    --blue: #4a9eff;
+    --blue-dim: rgba(74,158,255,0.08);
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --sidebar: 220px;
+    --header: 56px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: var(--sans); background: var(--bg); color: var(--text); font-size: 14px; }
+  a { text-decoration: none; color: inherit; }
+  button { cursor: pointer; font-family: var(--sans); }
+  input, select { font-family: var(--sans); }
+
+  /* LAYOUT */
+  .layout { display: flex; height: 100vh; overflow: hidden; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: var(--sidebar);
+    min-width: var(--sidebar);
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+  .sidebar-logo {
+    height: var(--header);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+  }
+  .logo-mark {
+    width: 28px; height: 28px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .logo-mark svg { width: 16px; height: 16px; }
+  .logo-text { font-size: 15px; font-weight: 500; letter-spacing: -0.3px; color: var(--text); }
+  .logo-text span { color: var(--accent); }
+
+  .sidebar-section { padding: 8px 0; }
+  .sidebar-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 6px 20px 4px;
+    font-family: var(--mono);
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 20px;
+    color: var(--text2);
+    font-size: 13.5px;
+    border-radius: 0;
+    transition: all 0.15s;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+  }
+  .nav-item:hover { color: var(--text); background: var(--bg3); }
+  .nav-item.active { color: var(--accent); background: var(--accent-dim); border-left-color: var(--accent); }
+  .nav-item .icon { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; }
+  .nav-item.active .icon { opacity: 1; }
+
+  .sidebar-bottom {
+    margin-top: auto;
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+  }
+  .account-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--bg3);
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: border-color 0.15s;
+  }
+  .account-pill:hover { border-color: var(--border2); }
+  .account-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00c896, #4a9eff);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 500; color: #000;
+    flex-shrink: 0;
+  }
+  .account-info { flex: 1; min-width: 0; }
+  .account-name { font-size: 12.5px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .account-role { font-size: 11px; color: var(--text3); }
+
+  /* MAIN */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+
+  /* TOP BAR */
+  .topbar {
+    height: var(--header);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 12px;
+    background: var(--bg2);
+    flex-shrink: 0;
+  }
+  .page-title { font-size: 15px; font-weight: 500; color: var(--text); flex: 1; }
+  .topbar-actions { display: flex; align-items: center; gap: 8px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px; font-weight: 400;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text2);
+    transition: all 0.15s;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--text); }
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+    font-weight: 500;
+  }
+  .btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+  .date-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg3);
+  }
+
+  /* CONTENT AREA */
+  .content { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
+  .content::-webkit-scrollbar { width: 4px; }
+  .content::-webkit-scrollbar-track { background: transparent; }
+  .content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+  /* PAGES */
+  .page { display: none; flex-direction: column; gap: 24px; }
+  .page.active { display: flex; }
+
+  /* METRIC CARDS */
+  .metric-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .metric-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: border-color 0.15s;
+  }
+  .metric-card:hover { border-color: var(--border2); }
+  .metric-label { font-size: 11px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.5px; }
+  .metric-value { font-size: 22px; font-weight: 300; color: var(--text); letter-spacing: -0.5px; font-family: var(--mono); }
+  .metric-delta {
+    font-size: 11px;
+    font-family: var(--mono);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .metric-delta.up { color: var(--accent); }
+  .metric-delta.down { color: var(--red); }
+  .metric-delta.neutral { color: var(--text3); }
+
+  /* SECTION HEADERS */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .section-title { font-size: 13px; font-weight: 500; color: var(--text2); letter-spacing: 0.2px; }
+
+  /* TABLES */
+  .table-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .table-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .table-header-title { font-size: 13px; font-weight: 500; color: var(--text); }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text3);
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+    white-space: nowrap;
+  }
+  thead th:last-child { text-align: right; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--bg3); }
+  tbody td { padding: 11px 16px; font-size: 13px; color: var(--text); vertical-align: middle; }
+  tbody td:last-child { text-align: right; }
+
+  /* BADGES */
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: var(--mono);
+  }
+  .badge-green { background: var(--accent-dim2); color: var(--accent); }
+  .badge-red { background: var(--red-dim); color: var(--red); }
+  .badge-amber { background: var(--amber-dim); color: var(--amber); }
+  .badge-blue { background: var(--blue-dim); color: var(--blue); }
+  .badge-gray { background: var(--bg4); color: var(--text2); border: 1px solid var(--border); }
+
+  /* ACOS BAR */
+  .acos-bar { display: flex; align-items: center; gap: 8px; }
+  .bar-track { flex: 1; height: 3px; background: var(--bg4); border-radius: 2px; overflow: hidden; min-width: 60px; }
+  .bar-fill { height: 100%; border-radius: 2px; }
+  .bar-fill.good { background: var(--accent); }
+  .bar-fill.warn { background: var(--amber); }
+  .bar-fill.bad { background: var(--red); }
+  .bar-val { font-size: 12px; font-family: var(--mono); color: var(--text2); min-width: 36px; text-align: right; }
+
+  /* CHART PLACEHOLDER */
+  .chart-placeholder {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .chart-inner { padding: 20px; }
+  .mini-chart { display: flex; align-items: flex-end; gap: 3px; height: 80px; }
+  .mini-bar { flex: 1; border-radius: 2px 2px 0 0; min-height: 4px; opacity: 0.85; transition: opacity 0.2s; }
+  .mini-bar:hover { opacity: 1; }
+
+  /* ALGO CARDS — expandable full-width */
+  .algo-card-full {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+  .algo-card-full.enabled { border-color: var(--accent-dim2); }
+  .algo-card-full.expanded { border-color: var(--border2); }
+  .acf-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; cursor: pointer; user-select: none;
+    transition: background 0.15s;
+  }
+  .acf-header:hover { background: var(--bg3); }
+  .acf-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+  .acf-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border2); flex-shrink: 0; }
+  .acf-dot.enabled-dot { background: var(--accent); }
+  .acf-name { font-size: 13.5px; font-weight: 500; color: var(--text); }
+  .acf-desc { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .acf-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .acf-chevron { width: 16px; height: 16px; color: var(--text3); transition: transform 0.2s; flex-shrink: 0; }
+  .algo-card-full.expanded .acf-chevron { transform: rotate(180deg); }
+
+  .acf-body {
+    display: none;
+    padding: 0 18px 18px;
+    border-top: 1px solid var(--border);
+  }
+  .algo-card-full.expanded .acf-body { display: block; }
+
+  .acf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; }
+  .acf-field { display: flex; flex-direction: column; gap: 4px; }
+  .acf-label { font-size: 11px; font-family: var(--mono); color: var(--text3); text-transform: uppercase; letter-spacing: 0.4px; }
+  .acf-input {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 5px;
+    padding: 7px 10px; color: var(--text); font-size: 13px; font-family: var(--mono);
+    outline: none; transition: border-color 0.15s; width: 100%;
+  }
+  .acf-input:focus { border-color: var(--accent); }
+  .acf-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .acf-select {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 5px;
+    padding: 7px 10px; color: var(--text); font-size: 13px; font-family: var(--sans);
+    outline: none; transition: border-color 0.15s; width: 100%; cursor: pointer;
+  }
+  .acf-select:focus { border-color: var(--accent); }
+  .acf-textarea {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 5px;
+    padding: 8px 10px; color: var(--text); font-size: 12px; font-family: var(--mono);
+    outline: none; resize: vertical; min-height: 90px; width: 100%; line-height: 1.6;
+    transition: border-color 0.15s;
+  }
+  .acf-textarea:focus { border-color: var(--accent); }
+  .acf-hint { font-size: 11px; color: var(--text3); line-height: 1.4; }
+  .acf-actions { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .acf-save-msg { font-size: 11px; font-family: var(--mono); color: var(--accent); opacity: 0; transition: opacity 0.3s; }
+  .acf-save-msg.visible { opacity: 1; }
+
+  /* HOUR GRID for dayparting */
+  .hour-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin: 8px 0; }
+  .hour-cell {
+    height: 28px; border-radius: 4px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; font-size: 9px;
+    font-family: var(--mono); color: var(--text3); border: 1px solid var(--border);
+    background: var(--bg4); transition: all 0.15s; user-select: none;
+  }
+  .hour-cell.on { background: var(--accent-dim2); border-color: var(--accent); color: var(--accent); }
+  .hour-cell:hover { border-color: var(--border2); }
+
+  /* DAY BUDGET GRID */
+  .day-budget-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 8px 0; }
+  .day-bud-item { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+  .day-label { font-size: 10px; font-family: var(--mono); color: var(--text3); }
+  .day-bud-item .acf-input { text-align: center; padding: 6px 4px; }
+
+  /* Legacy algo styles kept for other uses */
+  .algo-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .algo-desc { font-size: 12px; color: var(--text3); line-height: 1.5; }
+  .toggle {
+    width: 32px; height: 18px;
+    border-radius: 9px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    top: 3px;
+    transition: left 0.2s;
+  }
+  .toggle.off { background: var(--bg4); }
+  .toggle.off::after { left: 3px; }
+  .toggle.on { background: var(--accent); }
+  .toggle.on::after { left: 17px; }
+
+  /* SEARCH / FILTER BAR */
+  .filter-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
+  .search-input {
+    flex: 1;
+    max-width: 280px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 12px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text3); }
+  .filter-select {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: var(--text2);
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .filter-select:focus { border-color: var(--accent); }
+
+  /* STATUS DOT */
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .status-dot.live { background: var(--accent); }
+  .status-dot.paused { background: var(--amber); }
+  .status-dot.archived { background: var(--text3); }
+
+  /* CAMPAIGN TYPE TAG */
+  .type-tag {
+    font-size: 10px;
+    font-family: var(--mono);
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border2);
+    color: var(--text3);
+    margin-left: 6px;
+  }
+
+  /* TWO-COL LAYOUT */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* INSIGHTS PANEL */
+  .insight-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  .insight-item:last-child { border-bottom: none; }
+  .insight-item:hover { background: var(--bg3); }
+  .insight-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .insight-content { flex: 1; }
+  .insight-title { font-size: 13px; color: var(--text); margin-bottom: 3px; }
+  .insight-meta { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+  .insight-action { font-size: 12px; color: var(--accent); cursor: pointer; padding: 4px 8px; border: 1px solid var(--accent-dim2); border-radius: 4px; white-space: nowrap; transition: background 0.15s; }
+  .insight-action:hover { background: var(--accent-dim); }
+
+  /* CONNECTION STATUS */
+  .conn-status {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; font-family: var(--mono);
+    color: var(--text3);
+  }
+  .conn-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); animation: pulse 2s infinite; }
+  .conn-dot.connected { background: var(--accent); animation: none; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* CONNECT BANNER */
+  .connect-banner {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .connect-banner h2 { font-size: 20px; font-weight: 400; color: var(--text); }
+  .connect-banner p { font-size: 13px; color: var(--text3); max-width: 440px; line-height: 1.7; }
+
+  /* STEP LIST */
+  .step-list { display: flex; flex-direction: column; gap: 0; text-align: left; width: 100%; max-width: 500px; }
+  .step-item {
+    display: flex; gap: 14px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+    border-radius: 0;
+  }
+  .step-item:first-child { border-radius: 8px 8px 0 0; }
+  .step-item:last-child { border-radius: 0 0 8px 8px; border-bottom: none; }
+  .step-num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-family: var(--mono); color: var(--text3);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .step-content h4 { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+  .step-content p { font-size: 12px; color: var(--text3); line-height: 1.5; }
+  .step-content code {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--bg);
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    color: var(--accent);
+    display: inline-block;
+    margin-top: 4px;
+  }
+
+  /* ASIN GRID */
+  .asin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .asin-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    transition: border-color 0.15s;
+  }
+  .asin-card:hover { border-color: var(--border2); }
+  .asin-card.automated { border-color: var(--accent-dim2); }
+  .asin-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+  .asin-id { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+  .asin-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+  .asin-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .asin-metric { background: var(--bg3); border-radius: 6px; padding: 8px 10px; }
+  .asin-metric-label { font-size: 10px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; margin-bottom: 3px; }
+  .asin-metric-val { font-size: 14px; font-family: var(--mono); color: var(--text); }
+
+  /* ANALYTICS TABS */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .tab {
+    padding: 10px 18px;
+    font-size: 13px;
+    color: var(--text3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.15s;
+  }
+  .tab:hover { color: var(--text2); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* SMALL SPARKLINE */
+  .sparkline { display: flex; align-items: flex-end; gap: 2px; height: 28px; }
+  .spark-bar { width: 4px; border-radius: 1px 1px 0 0; background: var(--accent); opacity: 0.6; }
+
+  /* RESTOCK INDICATORS */
+  .restock-bar { height: 4px; border-radius: 2px; background: var(--bg4); overflow: hidden; margin: 6px 0; }
+  .restock-fill { height: 100%; border-radius: 2px; }
+
+  /* SCROLLABLE TABLE WRAP */
+  .table-scroll { overflow-x: auto; }
+
+  /* REPORT GRID */
+  .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 40px; color: var(--text3); font-size: 13px; }
+
+  /* BID INPUT */
+  .bid-cell { display: flex; align-items: center; gap: 2px; background: var(--bg3); border: 1px solid var(--border); border-radius: 5px; padding: 3px 6px; width: 90px; transition: border-color 0.15s; }
+  .bid-cell:focus-within { border-color: var(--accent); }
+  .bid-prefix { font-family: var(--mono); font-size: 12px; color: var(--text3); }
+  .bid-input { background: transparent; border: none; outline: none; font-family: var(--mono); font-size: 12px; color: var(--text); width: 42px; }
+  .bid-input::-webkit-inner-spin-button, .bid-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .bid-confirm { background: transparent; border: none; color: var(--text3); font-size: 12px; padding: 0 2px; cursor: pointer; line-height: 1; transition: color 0.15s; }
+  .bid-confirm:hover { color: var(--accent); }
+  .bid-saved { border-color: var(--accent) !important; }
+
+  /* KW TOGGLE BUTTON */
+  .kw-toggle-btn { font-family: var(--mono); font-size: 11px; padding: 4px 10px; border-radius: 4px; border: 1px solid; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .kw-toggle-btn.enabled { background: var(--amber-dim); border-color: var(--amber); color: var(--amber); }
+  .kw-toggle-btn.enabled:hover { background: rgba(245,166,35,0.2); }
+  .kw-toggle-btn.paused { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+  .kw-toggle-btn.paused:hover { background: var(--accent-dim2); }
+
+  /* ALGO EXPANDABLE CARDS */
+  .algo-card-full {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+  .algo-card-full.enabled { border-color: var(--accent-dim2); }
+  .algo-card-full.open { border-color: var(--border2); }
+  .algo-card-full.enabled.open { border-color: var(--accent); }
+
+  .acf-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.12s;
+    gap: 16px;
+  }
+  .acf-header:hover { background: var(--bg3); }
+
+  .acf-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+  .acf-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+
+  .acf-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border2);
+    flex-shrink: 0;
+  }
+  .acf-dot.enabled-dot { background: var(--accent); box-shadow: 0 0 6px rgba(0,200,150,0.4); }
+
+  .acf-name { font-size: 13.5px; font-weight: 500; color: var(--text); }
+  .acf-desc { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+  .acf-chevron {
+    width: 14px; height: 14px;
+    color: var(--text3);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .algo-card-full.open .acf-chevron { transform: rotate(180deg); }
+
+  .acf-body {
+    display: none;
+    padding: 0 18px 18px;
+    border-top: 1px solid var(--border);
+    animation: fadeIn 0.15s ease;
+  }
+  .algo-card-full.open .acf-body { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+  .acf-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    padding-top: 16px;
+  }
+  .acf-field { display: flex; flex-direction: column; gap: 5px; }
+  .acf-label { font-size: 11px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.4px; }
+  .acf-input {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+  .acf-input:focus { border-color: var(--accent); }
+  .acf-input::-webkit-inner-spin-button { opacity: 0.4; }
+  .acf-select {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    outline: none;
+    width: 100%;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .acf-select:focus { border-color: var(--accent); }
+  .acf-hint { font-size: 11px; color: var(--text3); line-height: 1.4; }
+  .acf-textarea {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+    width: 100%;
+    min-height: 110px;
+    resize: vertical;
+    line-height: 1.6;
+    transition: border-color 0.15s;
+  }
+  .acf-textarea:focus { border-color: var(--accent); }
+  .acf-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .acf-save-msg {
+    font-size: 12px;
+    color: var(--accent);
+    font-family: var(--mono);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .acf-save-msg.show { opacity: 1; }
+
+  /* HOUR GRID (dayparting) */
+  .hour-grid {
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: 3px;
+    margin: 10px 0 4px;
+  }
+  .hour-cell {
+    height: 32px;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-family: var(--mono);
+    transition: background 0.12s;
+    border: 1px solid transparent;
+  }
+  .hour-cell.on { background: rgba(0,200,150,0.25); border-color: var(--accent-dim2); color: var(--accent); }
+  .hour-cell.off { background: var(--bg4); color: var(--text3); }
+  .hour-cell:hover { border-color: var(--border2); }
+
+  /* DAY BUDGET GRID */
+  .day-budget-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+    padding: 12px 0 4px;
+  }
+  .day-bud-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  }
+  .day-label {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .day-bud-item .acf-input { text-align: center; padding: 6px 4px; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 16 16" fill="none">
+          <path d="M3 12L8 4L13 12" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M5.5 9H10.5" stroke="#000" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="logo-text">Ad<span>Scale</span></span>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Overview</div>
+      <div class="nav-item active" onclick="navigate('dashboard', this)">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/>
+          <rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/>
+        </svg>
+        Dashboard
+      </div>
+      <div class="nav-item" onclick="navigate('analytics', this)">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <polyline points="1,12 5,7 8,9 12,4 15,6"/>
+        </svg>
+        Analytics
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Advertising</div>
+      <div class="nav-item" onclick="navigate('campaigns', this)">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M2 8L7 3L12 8"/><path d="M4 12V8"/><path d="M10 12V8"/><path d="M7 3V13"/>
+        </svg>
+        Campaigns
+      </div>
+      <div class="nav-item" onclick="navigate('keywords', this)">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="6" cy="6" r="4"/><path d="M9.5 9.5L14 14"/>
+        </svg>
+        Keywords
+      </div>
+      <div class="nav-item" onclick="navigate('search-terms', this)">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="1" y="3" width="14" height="2" rx="1"/><rect x="1" y="7" width="10" height="2" rx="1"/><rect x="1" y="11" width="7" height="2" rx="1"/>
+        </svg>
+        Search Terms
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Automation</div>
+      <div class="nav-item" onclick="navigate('algorithms', this)">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="8" cy="12" r="2"/>
+          <path d="M6 4h2M10 4h0M8 10V6"/>
+        </svg>
+        Algorithms
+      </div>
+      <div class="nav-item" onclick="navigate('asins', this)">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/>
+          <rect x="2" y="9" width="5" height="5" rx="1"/><path d="M12 9v2m0 2v.5M9 11.5h2m2 0h.5"/>
+        </svg>
+        ASINs
+      </div>
+      <div class="nav-item" onclick="navigate('dayparting', this)">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="8" cy="8" r="6"/><path d="M8 4v4l3 2"/>
+        </svg>
+        Day Parting
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Products</div>
+      <div class="nav-item" onclick="navigate('products', this)">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M2 5l6-3 6 3v6l-6 3-6-3V5z"/>
+        </svg>
+        Product Performance
+      </div>
+      <div class="nav-item" onclick="navigate('restock', this)">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2" y="10" width="12" height="4" rx="1"/><path d="M5 10V7m6 3V7M8 7V3m0 0L5.5 5.5M8 3l2.5 2.5"/>
+        </svg>
+        Restock Forecast
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Setup</div>
+      <div class="nav-item" onclick="navigate('connect', this)">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M9 1l6 6-6 6M1 7h14" style="transform-origin:center;transform:rotate(0deg)"/>
+          <circle cx="4" cy="8" r="1.5" fill="currentColor" stroke="none"/>
+          <path d="M4 8H12"/>
+        </svg>
+        Connect Amazon
+      </div>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="account-pill">
+        <div class="account-avatar">US</div>
+        <div class="account-info">
+          <div class="account-name">US Marketplace</div>
+          <div class="account-role">
+            <span class="conn-dot" id="connDot"></span>
+            <span id="connLabel">Not connected</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+    <div class="topbar">
+      <span class="page-title" id="pageTitle">Dashboard</span>
+      <div class="topbar-actions">
+        <div class="date-badge" id="currentDate"></div>
+        <button class="btn" onclick="navigate('connect', document.querySelector('.nav-item:last-of-type'))">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1v14M1 8h14"/></svg>
+          Connect Amazon
+        </button>
+        <button class="btn btn-primary" onclick="navigate('campaigns', null)">+ New Campaign</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD PAGE -->
+      <div class="page active" id="page-dashboard">
+
+        <div class="metric-grid">
+          <div class="metric-card">
+            <div class="metric-label">Total Sales</div>
+            <div class="metric-value">—</div>
+            <div class="metric-delta neutral">Connect to see data</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Ad Spend</div>
+            <div class="metric-value">—</div>
+            <div class="metric-delta neutral">Connect to see data</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">ACOS</div>
+            <div class="metric-value">—</div>
+            <div class="metric-delta neutral">Connect to see data</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">ROAS</div>
+            <div class="metric-value">—</div>
+            <div class="metric-delta neutral">Connect to see data</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Net Profit</div>
+            <div class="metric-value">—</div>
+            <div class="metric-delta neutral">Connect to see data</div>
+          </div>
+        </div>
+
+        <!-- DEMO METRICS (shown for illustration) -->
+        <div style="border: 1px dashed var(--border2); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 10px;">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--amber)" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1.5"/></svg>
+          <span style="font-size: 12px; color: var(--text3);">Sample data shown below. Connect your Amazon Ads account to see real metrics.</span>
+          <button class="btn" style="margin-left:auto; font-size:12px; padding:4px 10px;" onclick="navigate('connect', null)">Connect now →</button>
+        </div>
+
+        <div class="two-col">
+          <div class="chart-placeholder">
+            <div class="table-header">
+              <span class="table-header-title">Sales vs Ad Spend (sample)</span>
+              <div style="display:flex;gap:12px;font-size:11px;font-family:var(--mono);">
+                <span style="color:var(--accent);">■ Sales</span>
+                <span style="color:var(--blue);">■ Ad Spend</span>
+              </div>
+            </div>
+            <div class="chart-inner">
+              <div class="mini-chart" id="salesChart"></div>
+              <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:var(--text3);font-family:var(--mono);">
+                <span>Mar 18</span><span>Mar 19</span><span>Mar 20</span><span>Mar 21</span><span>Mar 22</span><span>Mar 23</span><span>Mar 24</span><span>Today</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <div class="table-header">
+              <span class="table-header-title">Automation Insights</span>
+              <span style="font-size:11px;color:var(--text3);font-family:var(--mono);">3 actions pending</span>
+            </div>
+            <div class="insight-item">
+              <div class="insight-dot" style="background:var(--red)"></div>
+              <div class="insight-content">
+                <div class="insight-title">8 keywords exceeding target ACOS</div>
+                <div class="insight-meta">Negative algorithm · ACOS > 45%</div>
+              </div>
+              <div class="insight-action">Review</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-dot" style="background:var(--accent)"></div>
+              <div class="insight-content">
+                <div class="insight-title">14 high-converting search terms ready to import</div>
+                <div class="insight-meta">Import algorithm · 7-day lookback</div>
+              </div>
+              <div class="insight-action">Import</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-dot" style="background:var(--amber)"></div>
+              <div class="insight-content">
+                <div class="insight-title">3 campaigns below daily budget target</div>
+                <div class="insight-meta">Daily budget algorithm</div>
+              </div>
+              <div class="insight-action">Adjust</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-header">
+            <span class="table-header-title">Top Campaigns (sample data)</span>
+            <button class="btn" style="font-size:12px;padding:4px 10px;" onclick="navigate('campaigns',null)">View all →</button>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Campaign</th><th>Type</th><th>Status</th><th>Spend</th><th>Sales</th><th>ACOS</th><th>ROAS</th><th>Clicks</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="status-dot live"></span>Auto - Kitchen Knife Set<span class="type-tag">AUTO</span></td>
+                  <td><span class="badge badge-blue">Automatic</span></td>
+                  <td><span class="badge badge-green">Live</span></td>
+                  <td style="font-family:var(--mono)">$284.50</td>
+                  <td style="font-family:var(--mono)">$1,422.10</td>
+                  <td><div class="acos-bar"><div class="bar-track"><div class="bar-fill good" style="width:20%"></div></div><span class="bar-val">20.0%</span></div></td>
+                  <td style="font-family:var(--mono);color:var(--accent)">5.0x</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">312</td>
+                </tr>
+                <tr>
+                  <td><span class="status-dot live"></span>SP - Exact - Premium Knife<span class="type-tag">SP</span></td>
+                  <td><span class="badge badge-blue">Sponsored</span></td>
+                  <td><span class="badge badge-green">Live</span></td>
+                  <td style="font-family:var(--mono)">$512.20</td>
+                  <td style="font-family:var(--mono)">$1,890.00</td>
+                  <td><div class="acos-bar"><div class="bar-track"><div class="bar-fill warn" style="width:27%"></div></div><span class="bar-val">27.1%</span></div></td>
+                  <td style="font-family:var(--mono);color:var(--accent)">3.7x</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">541</td>
+                </tr>
+                <tr>
+                  <td><span class="status-dot paused"></span>SB - Brand Defense<span class="type-tag">SB</span></td>
+                  <td><span class="badge badge-gray">Sponsored Brands</span></td>
+                  <td><span class="badge badge-amber">Paused</span></td>
+                  <td style="font-family:var(--mono)">$0.00</td>
+                  <td style="font-family:var(--mono)">$0.00</td>
+                  <td><div class="acos-bar"><div class="bar-track"><div class="bar-fill" style="width:0%"></div></div><span class="bar-val">—</span></div></td>
+                  <td style="font-family:var(--mono);color:var(--text3)">—</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">0</td>
+                </tr>
+                <tr>
+                  <td><span class="status-dot live"></span>PT - Competitor Targeting<span class="type-tag">PT</span></td>
+                  <td><span class="badge badge-blue">Product</span></td>
+                  <td><span class="badge badge-green">Live</span></td>
+                  <td style="font-family:var(--mono)">$178.40</td>
+                  <td style="font-family:var(--mono)">$410.00</td>
+                  <td><div class="acos-bar"><div class="bar-track"><div class="bar-fill bad" style="width:43.5%"></div></div><span class="bar-val">43.5%</span></div></td>
+                  <td style="font-family:var(--mono);color:var(--red)">2.3x</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">203</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- CAMPAIGNS PAGE -->
+      <div class="page" id="page-campaigns">
+        <div class="filter-bar">
+          <input class="search-input" placeholder="Search campaigns..." type="text"/>
+          <select class="filter-select" id="portfolioFilter" onchange="filterCampaignsByPortfolio(this.value)">
+            <option value="">All Portfolios</option>
+            <option value="knives-main">🗂 Knives — Main Brand</option>
+            <option value="knives-defense">🗂 Knives — Brand Defense</option>
+            <option value="knives-conquest">🗂 Knives — Competitor Conquest</option>
+            <option value="no-portfolio">— No Portfolio</option>
+          </select>
+          <select class="filter-select">
+            <option>All Types</option>
+            <option>Automatic</option>
+            <option>Sponsored Products</option>
+            <option>Sponsored Brands</option>
+            <option>Product Targeting</option>
+          </select>
+          <select class="filter-select">
+            <option>All Statuses</option>
+            <option>Live</option>
+            <option>Paused</option>
+            <option>Archived</option>
+          </select>
+          <select class="filter-select">
+            <option>Last 7 days</option>
+            <option>Last 14 days</option>
+            <option>Last 30 days</option>
+          </select>
+          <button class="btn btn-primary" style="margin-left:auto">+ New Campaign</button>
+        </div>
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Campaign Name</th><th>Type</th><th>Status</th><th>Budget</th><th>Spend</th><th>Sales</th><th>ACOS</th><th>ROAS</th><th>Impressions</th><th>Clicks</th><th>CVR</th><th>Automation</th>
+                </tr>
+              </thead>
+              <tbody id="campaignTableBody">
+                <tr data-portfolio="knives-main">
+                  <td><span class="status-dot live"></span>Auto - Kitchen Knife Set</td>
+                  <td><span class="badge badge-blue">Auto</span></td>
+                  <td><span class="badge badge-green">Live</span></td>
+                  <td style="font-family:var(--mono)">$50/day</td>
+                  <td style="font-family:var(--mono)">$284.50</td>
+                  <td style="font-family:var(--mono)">$1,422.10</td>
+                  <td><div class="acos-bar"><div class="bar-track"><div class="bar-fill good" style="width:20%"></div></div><span class="bar-val">20.0%</span></div></td>
+                  <td style="font-family:var(--mono);color:var(--accent)">5.0x</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">24,510</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">312</td>
+                  <td style="font-family:var(--mono)">8.2%</td>
+                  <td><span class="badge badge-green">On</span></td>
+                </tr>
+                <tr data-portfolio="knives-main">
+                  <td><span class="status-dot live"></span>SP - Exact - Premium Knife</td>
+                  <td><span class="badge badge-blue">SP</span></td>
+                  <td><span class="badge badge-green">Live</span></td>
+                  <td style="font-family:var(--mono)">$100/day</td>
+                  <td style="font-family:var(--mono)">$512.20</td>
+                  <td style="font-family:var(--mono)">$1,890.00</td>
+                  <td><div class="acos-bar"><div class="bar-track"><div class="bar-fill warn" style="width:27%"></div></div><span class="bar-val">27.1%</span></div></td>
+                  <td style="font-family:var(--mono);color:var(--accent)">3.7x</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">41,200</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">541</td>
+                  <td style="font-family:var(--mono)">5.8%</td>
+                  <td><span class="badge badge-green">On</span></td>
+                </tr>
+                <tr data-portfolio="knives-defense">
+                  <td><span class="status-dot paused"></span>SB - Brand Defense</td>
+                  <td><span class="badge badge-gray">SB</span></td>
+                  <td><span class="badge badge-amber">Paused</span></td>
+                  <td style="font-family:var(--mono)">$30/day</td>
+                  <td style="font-family:var(--mono)">$0.00</td>
+                  <td style="font-family:var(--mono)">$0.00</td>
+                  <td><div class="acos-bar"><div class="bar-track"><div class="bar-fill" style="width:0"></div></div><span class="bar-val">—</span></div></td>
+                  <td style="font-family:var(--mono);color:var(--text3)">—</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">—</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">—</td>
+                  <td style="font-family:var(--mono)">—</td>
+                  <td><span class="badge badge-gray">Off</span></td>
+                </tr>
+                <tr data-portfolio="knives-conquest">
+                  <td><span class="status-dot live"></span>PT - Competitor Targeting</td>
+                  <td><span class="badge badge-blue">PT</span></td>
+                  <td><span class="badge badge-green">Live</span></td>
+                  <td style="font-family:var(--mono)">$40/day</td>
+                  <td style="font-family:var(--mono)">$178.40</td>
+                  <td style="font-family:var(--mono)">$410.00</td>
+                  <td><div class="acos-bar"><div class="bar-track"><div class="bar-fill bad" style="width:43.5%"></div></div><span class="bar-val">43.5%</span></div></td>
+                  <td style="font-family:var(--mono);color:var(--red)">2.3x</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">15,840</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">203</td>
+                  <td style="font-family:var(--mono)">3.1%</td>
+                  <td><span class="badge badge-green">On</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- KEYWORDS PAGE -->
+      <div class="page" id="page-keywords">
+        <div class="filter-bar">
+          <input class="search-input" placeholder="Search keywords..." type="text" oninput="filterKeywords(this.value)"/>
+          <select class="filter-select" onchange="filterKeywords()"><option value="">All Match Types</option><option>Exact</option><option>Phrase</option><option>Broad</option></select>
+          <select class="filter-select" onchange="filterKeywords()"><option value="">All States</option><option>Enabled</option><option>Paused</option><option>Negated</option></select>
+          <select class="filter-select" onchange="filterKeywords()">
+            <option value="">All Campaigns</option>
+            <option>SP - Exact - Premium Knife</option>
+            <option>Auto - Kitchen Knife Set</option>
+            <option>SB - Brand Defense</option>
+          </select>
+          <button class="btn btn-primary" style="margin-left:auto">+ Add Keywords</button>
+        </div>
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th>Keyword</th><th>Campaign</th><th>Match</th><th>State</th><th>Bid</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>Spend</th><th>Sales</th><th>ACOS</th><th>Orders</th><th>Action</th></tr>
+              </thead>
+              <tbody id="kwTableBody">
+                <tr data-state="enabled">
+                  <td style="font-family:var(--mono);font-size:12px">chef knife set</td>
+                  <td style="font-size:12px;color:var(--text2);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">SP - Exact - Premium Knife</td>
+                  <td><span class="badge badge-blue">Exact</span></td>
+                  <td class="kw-state-cell"><span class="badge badge-green">Enabled</span></td>
+                  <td><div class="bid-cell">
+                    <span class="bid-prefix">$</span>
+                    <input class="bid-input" type="number" value="1.24" min="0.02" step="0.01" onblur="saveBid(this)" onkeydown="bidKeydown(event,this)"/>
+                    <button class="bid-confirm" onclick="saveBid(this.previousElementSibling)" title="Save bid">✓</button>
+                  </div></td>
+                  <td style="font-family:var(--mono);color:var(--text2)">8,420</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">210</td>
+                  <td style="font-family:var(--mono)">2.49%</td>
+                  <td style="font-family:var(--mono)">$260.40</td>
+                  <td style="font-family:var(--mono)">$980.00</td>
+                  <td><div class="acos-bar"><div class="bar-track"><div class="bar-fill good" style="width:26.6%"></div></div><span class="bar-val">26.6%</span></div></td>
+                  <td style="font-family:var(--mono);color:var(--text2)">22</td>
+                  <td><button class="kw-toggle-btn enabled" onclick="toggleKw(this)">Pause</button></td>
+                </tr>
+                <tr data-state="enabled">
+                  <td style="font-family:var(--mono);font-size:12px">kitchen knife block set</td>
+                  <td style="font-size:12px;color:var(--text2);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">SP - Exact - Premium Knife</td>
+                  <td><span class="badge badge-gray">Phrase</span></td>
+                  <td class="kw-state-cell"><span class="badge badge-green">Enabled</span></td>
+                  <td><div class="bid-cell">
+                    <span class="bid-prefix">$</span>
+                    <input class="bid-input" type="number" value="0.88" min="0.02" step="0.01" onblur="saveBid(this)" onkeydown="bidKeydown(event,this)"/>
+                    <button class="bid-confirm" onclick="saveBid(this.previousElementSibling)" title="Save bid">✓</button>
+                  </div></td>
+                  <td style="font-family:var(--mono);color:var(--text2)">12,100</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">180</td>
+                  <td style="font-family:var(--mono)">1.49%</td>
+                  <td style="font-family:var(--mono)">$158.40</td>
+                  <td style="font-family:var(--mono)">$720.00</td>
+                  <td><div class="acos-bar"><div class="bar-track"><div class="bar-fill good" style="width:22%"></div></div><span class="bar-val">22.0%</span></div></td>
+                  <td style="font-family:var(--mono);color:var(--text2)">16</td>
+                  <td><button class="kw-toggle-btn enabled" onclick="toggleKw(this)">Pause</button></td>
+                </tr>
+                <tr data-state="paused">
+                  <td style="font-family:var(--mono);font-size:12px">best knife set for home</td>
+                  <td style="font-size:12px;color:var(--text2);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Auto - Kitchen Knife Set</td>
+                  <td><span class="badge badge-gray">Broad</span></td>
+                  <td class="kw-state-cell"><span class="badge badge-amber">Paused</span></td>
+                  <td><div class="bid-cell">
+                    <span class="bid-prefix">$</span>
+                    <input class="bid-input" type="number" value="0.55" min="0.02" step="0.01" onblur="saveBid(this)" onkeydown="bidKeydown(event,this)"/>
+                    <button class="bid-confirm" onclick="saveBid(this.previousElementSibling)" title="Save bid">✓</button>
+                  </div></td>
+                  <td style="font-family:var(--mono);color:var(--text2)">5,200</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">44</td>
+                  <td style="font-family:var(--mono)">0.85%</td>
+                  <td style="font-family:var(--mono)">$24.20</td>
+                  <td style="font-family:var(--mono)">$0.00</td>
+                  <td><div class="acos-bar"><div class="bar-track"><div class="bar-fill bad" style="width:100%"></div></div><span class="bar-val">∞</span></div></td>
+                  <td style="font-family:var(--mono);color:var(--text2)">0</td>
+                  <td><button class="kw-toggle-btn paused" onclick="toggleKw(this)">Enable</button></td>
+                </tr>
+                <tr data-state="negated">
+                  <td style="font-family:var(--mono);font-size:12px">steak knife set</td>
+                  <td style="font-size:12px;color:var(--text2);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">SB - Brand Defense</td>
+                  <td><span class="badge badge-blue">Exact</span></td>
+                  <td class="kw-state-cell"><span class="badge badge-red">Negated</span></td>
+                  <td style="font-family:var(--mono);color:var(--text3)">—</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">3,100</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">12</td>
+                  <td style="font-family:var(--mono)">0.39%</td>
+                  <td style="font-family:var(--mono)">$8.40</td>
+                  <td style="font-family:var(--mono)">$0.00</td>
+                  <td><div class="acos-bar"><div class="bar-track"><div class="bar-fill bad" style="width:100%"></div></div><span class="bar-val">∞</span></div></td>
+                  <td style="font-family:var(--mono);color:var(--text2)">0</td>
+                  <td><span style="font-size:11px;color:var(--text3)">Negated</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEARCH TERMS PAGE -->
+      <div class="page" id="page-search-terms">
+        <div style="border:1px solid var(--border2);border-radius:8px;padding:12px 16px;background:var(--accent-dim);margin-bottom:4px;display:flex;align-items:center;gap:10px;">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v4l2.5 1.5"/></svg>
+          <span style="font-size:12px;color:var(--accent)">14 high-performing search terms are ready to harvest into keyword campaigns.</span>
+          <button class="btn btn-primary" style="margin-left:auto;font-size:12px;padding:4px 12px;">Import Selected</button>
+        </div>
+        <div class="filter-bar">
+          <input class="search-input" placeholder="Filter search terms..." type="text"/>
+          <select class="filter-select"><option>All Campaigns</option><option>Auto - Kitchen Knife Set</option></select>
+          <select class="filter-select"><option>Last 30 days</option><option>Last 14 days</option><option>Last 7 days</option></select>
+        </div>
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th></th><th>Search Term</th><th>Campaign</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>Sales</th><th>ACOS</th><th>Orders</th><th>Action</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><input type="checkbox" checked/></td>
+                  <td style="font-family:var(--mono);font-size:12px">japanese chef knife 8 inch</td>
+                  <td style="color:var(--text2);font-size:12px">Auto - Kitchen Knife Set</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">4,210</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">88</td>
+                  <td style="font-family:var(--mono)">$92.40</td>
+                  <td style="font-family:var(--mono)">$480.00</td>
+                  <td><div class="acos-bar"><div class="bar-track"><div class="bar-fill good" style="width:19.2%"></div></div><span class="bar-val">19.2%</span></div></td>
+                  <td style="font-family:var(--mono);color:var(--text2)">11</td>
+                  <td><span class="badge badge-green">Import</span></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox" checked/></td>
+                  <td style="font-family:var(--mono);font-size:12px">professional kitchen knives</td>
+                  <td style="color:var(--text2);font-size:12px">Auto - Kitchen Knife Set</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">3,880</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">72</td>
+                  <td style="font-family:var(--mono)">$75.60</td>
+                  <td style="font-family:var(--mono)">$360.00</td>
+                  <td><div class="acos-bar"><div class="bar-track"><div class="bar-fill good" style="width:21%"></div></div><span class="bar-val">21.0%</span></div></td>
+                  <td style="font-family:var(--mono);color:var(--text2)">8</td>
+                  <td><span class="badge badge-green">Import</span></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox"/></td>
+                  <td style="font-family:var(--mono);font-size:12px">cheap knife set</td>
+                  <td style="color:var(--text2);font-size:12px">Auto - Kitchen Knife Set</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">6,500</td>
+                  <td style="font-family:var(--mono);color:var(--text2)">45</td>
+                  <td style="font-family:var(--mono)">$49.50</td>
+                  <td style="font-family:var(--mono)">$0.00</td>
+                  <td><div class="acos-bar"><div class="bar-track"><div class="bar-fill bad" style="width:100%"></div></div><span class="bar-val">∞</span></div></td>
+                  <td style="font-family:var(--mono);color:var(--text2)">0</td>
+                  <td><span class="badge badge-red">Negate</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALGORITHMS PAGE -->
+      <div class="page" id="page-algorithms">
+        <div class="section-header">
+          <span class="section-title">Automation Algorithms — click any card to configure</span>
+          <span style="font-size:11px;color:var(--text3);font-family:var(--mono)" id="algoCount">7 of 12 active</span>
+        </div>
+
+        <!-- 1. DYNAMIC BIDDING -->
+        <div class="algo-card-full enabled" id="ac-dynbid">
+          <div class="acf-header" onclick="toggleAlgoCard('ac-dynbid')">
+            <div class="acf-left">
+              <div class="acf-dot enabled-dot"></div>
+              <div>
+                <div class="acf-name">Dynamic Bidding</div>
+                <div class="acf-desc">Dynamically assign bidding rules and target ACOS based on keyword performance.</div>
+              </div>
+            </div>
+            <div class="acf-right">
+              <button class="toggle on" onclick="event.stopPropagation();toggleAlgo(this)" title="Enable/disable"></button>
+              <svg class="acf-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <div class="acf-body">
+            <div class="acf-grid">
+              <div class="acf-field">
+                <label class="acf-label">Target ACOS (%)</label>
+                <input class="acf-input" type="number" value="25" min="1" max="100" step="1"/>
+                <span class="acf-hint">Bids will be adjusted to reach this ACOS</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Min Bid ($)</label>
+                <input class="acf-input" type="number" value="0.10" min="0.02" step="0.01"/>
+                <span class="acf-hint">Never bid below this amount</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Max Bid ($)</label>
+                <input class="acf-input" type="number" value="5.00" min="0.10" step="0.10"/>
+                <span class="acf-hint">Never bid above this amount</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Max Bid Adjustment (%)</label>
+                <input class="acf-input" type="number" value="30" min="1" max="100" step="1"/>
+                <span class="acf-hint">Max % to raise or lower a bid per cycle</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Lookback Window (days)</label>
+                <input class="acf-input" type="number" value="14" min="1" max="90"/>
+                <span class="acf-hint">Days of data used to calculate performance</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Bidding Strategy</label>
+                <select class="acf-select">
+                  <option>Dynamic bids — down only</option>
+                  <option selected>Dynamic bids — up and down</option>
+                  <option>Fixed bids</option>
+                </select>
+                <span class="acf-hint">Amazon's bidding strategy for this algorithm</span>
+              </div>
+            </div>
+            <div class="acf-actions">
+              <button class="btn btn-primary" onclick="saveAlgo('ac-dynbid')">Save settings</button>
+              <span class="acf-save-msg" id="save-ac-dynbid"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. IMPORT ALGORITHM -->
+        <div class="algo-card-full enabled" id="ac-import">
+          <div class="acf-header" onclick="toggleAlgoCard('ac-import')">
+            <div class="acf-left">
+              <div class="acf-dot enabled-dot"></div>
+              <div>
+                <div class="acf-name">Import Algorithm</div>
+                <div class="acf-desc">Harvest high-performing search terms and import them into keyword campaigns.</div>
+              </div>
+            </div>
+            <div class="acf-right">
+              <button class="toggle on" onclick="event.stopPropagation();toggleAlgo(this)"></button>
+              <svg class="acf-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <div class="acf-body">
+            <div class="acf-grid">
+              <div class="acf-field">
+                <label class="acf-label">Max ACOS to Import (%)</label>
+                <input class="acf-input" type="number" value="30" min="1" max="100"/>
+                <span class="acf-hint">Only import terms with ACOS below this</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Min Clicks</label>
+                <input class="acf-input" type="number" value="5" min="1"/>
+                <span class="acf-hint">Minimum clicks before a term qualifies</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Min Orders</label>
+                <input class="acf-input" type="number" value="1" min="0"/>
+                <span class="acf-hint">Minimum orders required to import</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Lookback Window (days)</label>
+                <input class="acf-input" type="number" value="30" min="1" max="90"/>
+                <span class="acf-hint">Days of data to evaluate search terms</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Import as Match Type</label>
+                <select class="acf-select">
+                  <option selected>Exact</option>
+                  <option>Phrase</option>
+                  <option>Broad</option>
+                </select>
+                <span class="acf-hint">Match type for newly created keywords</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Import Into Campaign</label>
+                <select class="acf-select">
+                  <option selected>SP - Exact - Premium Knife</option>
+                  <option>Auto - Kitchen Knife Set</option>
+                </select>
+                <span class="acf-hint">Target campaign for imported keywords</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Starting Bid ($)</label>
+                <input class="acf-input" type="number" value="0.75" min="0.02" step="0.01"/>
+                <span class="acf-hint">Initial bid for imported keywords</span>
+              </div>
+            </div>
+            <div class="acf-actions">
+              <button class="btn btn-primary" onclick="saveAlgo('ac-import')">Save settings</button>
+              <span class="acf-save-msg" id="save-ac-import"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. NEGATIVE ALGORITHM -->
+        <div class="algo-card-full enabled" id="ac-neg">
+          <div class="acf-header" onclick="toggleAlgoCard('ac-neg')">
+            <div class="acf-left">
+              <div class="acf-dot enabled-dot"></div>
+              <div>
+                <div class="acf-name">Negative Algorithm</div>
+                <div class="acf-desc">Automatically negate search terms that exceed your ACOS threshold.</div>
+              </div>
+            </div>
+            <div class="acf-right">
+              <button class="toggle on" onclick="event.stopPropagation();toggleAlgo(this)"></button>
+              <svg class="acf-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <div class="acf-body">
+            <div class="acf-grid">
+              <div class="acf-field">
+                <label class="acf-label">Min ACOS to Negate (%)</label>
+                <input class="acf-input" type="number" value="60" min="1" max="500"/>
+                <span class="acf-hint">Negate terms with ACOS above this</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Min Spend Before Negating ($)</label>
+                <input class="acf-input" type="number" value="15" min="0" step="0.50"/>
+                <span class="acf-hint">Minimum spend before a term is eligible</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Min Clicks</label>
+                <input class="acf-input" type="number" value="10" min="1"/>
+                <span class="acf-hint">Minimum clicks before negating</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Lookback Window (days)</label>
+                <input class="acf-input" type="number" value="30" min="1" max="90"/>
+                <span class="acf-hint">Days of data to evaluate terms</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Negate as Match Type</label>
+                <select class="acf-select">
+                  <option selected>Exact</option>
+                  <option>Phrase</option>
+                </select>
+                <span class="acf-hint">How negatives are added to campaigns</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Also negate zero-order terms?</label>
+                <select class="acf-select">
+                  <option selected>Yes — after min spend</option>
+                  <option>No</option>
+                </select>
+                <span class="acf-hint">Negate terms with no conversions after spend threshold</span>
+              </div>
+            </div>
+            <div class="acf-actions">
+              <button class="btn btn-primary" onclick="saveAlgo('ac-neg')">Save settings</button>
+              <span class="acf-save-msg" id="save-ac-neg"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. NEGATIVE WORD -->
+        <div class="algo-card-full enabled" id="ac-negword">
+          <div class="acf-header" onclick="toggleAlgoCard('ac-negword')">
+            <div class="acf-left">
+              <div class="acf-dot enabled-dot"></div>
+              <div>
+                <div class="acf-name">Negative Word Algorithm</div>
+                <div class="acf-desc">Negate any search term that contains words from your bad word list.</div>
+              </div>
+            </div>
+            <div class="acf-right">
+              <button class="toggle on" onclick="event.stopPropagation();toggleAlgo(this)"></button>
+              <svg class="acf-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <div class="acf-body">
+            <div class="acf-grid">
+              <div class="acf-field">
+                <label class="acf-label">Min Spend Before Checking ($)</label>
+                <input class="acf-input" type="number" value="5" min="0" step="0.50"/>
+                <span class="acf-hint">Minimum spend before word check applies</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Negate as Match Type</label>
+                <select class="acf-select">
+                  <option selected>Exact</option>
+                  <option>Phrase</option>
+                </select>
+              </div>
+            </div>
+            <div class="acf-field" style="margin-top:4px">
+              <label class="acf-label">Bad Word List</label>
+              <textarea class="acf-textarea" placeholder="Enter one word or phrase per line e.g.&#10;cheap&#10;used&#10;replacement&#10;DIY">cheap
+used
+walmart
+replacement</textarea>
+              <span class="acf-hint">Any search term containing these words will be negated</span>
+            </div>
+            <div class="acf-actions">
+              <button class="btn btn-primary" onclick="saveAlgo('ac-negword')">Save settings</button>
+              <span class="acf-save-msg" id="save-ac-negword"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. DAYPARTING -->
+        <div class="algo-card-full enabled" id="ac-daypart">
+          <div class="acf-header" onclick="toggleAlgoCard('ac-daypart')">
+            <div class="acf-left">
+              <div class="acf-dot enabled-dot"></div>
+              <div>
+                <div class="acf-name">Dayparting Algorithm</div>
+                <div class="acf-desc">Pause ads during low-sales hours to avoid bot clicks and wasted spend.</div>
+              </div>
+            </div>
+            <div class="acf-right">
+              <button class="toggle on" onclick="event.stopPropagation();toggleAlgo(this)"></button>
+              <svg class="acf-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <div class="acf-body">
+            <div class="acf-grid">
+              <div class="acf-field">
+                <label class="acf-label">Action During Off-Hours</label>
+                <select class="acf-select">
+                  <option selected>Pause campaigns</option>
+                  <option>Reduce bids by %</option>
+                </select>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Bid Reduction % (if not pausing)</label>
+                <input class="acf-input" type="number" value="50" min="1" max="99"/>
+                <span class="acf-hint">Only used if action is "Reduce bids"</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Timezone</label>
+                <select class="acf-select">
+                  <option selected>America/New_York (ET)</option>
+                  <option>America/Los_Angeles (PT)</option>
+                  <option>Europe/London (GMT)</option>
+                  <option>Europe/Bucharest (EET)</option>
+                  <option>Asia/Tokyo (JST)</option>
+                </select>
+              </div>
+            </div>
+            <div class="acf-field" style="margin-top:4px">
+              <label class="acf-label">Active Hours Schedule</label>
+              <div class="hour-grid" id="hourGrid"></div>
+              <span class="acf-hint">Click to toggle. Green = ads ON. Gray = ads paused.</span>
+            </div>
+            <div class="acf-actions">
+              <button class="btn btn-primary" onclick="saveAlgo('ac-daypart')">Save settings</button>
+              <span class="acf-save-msg" id="save-ac-daypart"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. STATUS ALGORITHM -->
+        <div class="algo-card-full" id="ac-status">
+          <div class="acf-header" onclick="toggleAlgoCard('ac-status')">
+            <div class="acf-left">
+              <div class="acf-dot"></div>
+              <div>
+                <div class="acf-name">Status Algorithm</div>
+                <div class="acf-desc">Pause or enable ads automatically based on performance thresholds.</div>
+              </div>
+            </div>
+            <div class="acf-right">
+              <button class="toggle off" onclick="event.stopPropagation();toggleAlgo(this)"></button>
+              <svg class="acf-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <div class="acf-body">
+            <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:14px;padding:8px 10px;background:var(--bg4);border-radius:5px;border-left:2px solid var(--amber)">PAUSE condition — if ALL of these are true, campaign is paused</div>
+            <div class="acf-grid">
+              <div class="acf-field">
+                <label class="acf-label">ACOS exceeds (%)</label>
+                <input class="acf-input" type="number" value="70" min="1" max="500"/>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">AND Spend exceeds ($)</label>
+                <input class="acf-input" type="number" value="20" min="0"/>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">AND Orders equals</label>
+                <input class="acf-input" type="number" value="0" min="0"/>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Lookback Window (days)</label>
+                <input class="acf-input" type="number" value="7" min="1" max="90"/>
+              </div>
+            </div>
+            <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin:14px 0;padding:8px 10px;background:var(--bg4);border-radius:5px;border-left:2px solid var(--accent)">ENABLE condition — re-enable when</div>
+            <div class="acf-grid">
+              <div class="acf-field">
+                <label class="acf-label">ACOS drops below (%)</label>
+                <input class="acf-input" type="number" value="40" min="1" max="500"/>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Re-enable after (days paused)</label>
+                <input class="acf-input" type="number" value="3" min="1"/>
+                <span class="acf-hint">Try re-enabling after this many days</span>
+              </div>
+            </div>
+            <div class="acf-actions">
+              <button class="btn btn-primary" onclick="saveAlgo('ac-status')">Save settings</button>
+              <span class="acf-save-msg" id="save-ac-status"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. PLACEMENT ALGORITHM -->
+        <div class="algo-card-full enabled" id="ac-placement">
+          <div class="acf-header" onclick="toggleAlgoCard('ac-placement')">
+            <div class="acf-left">
+              <div class="acf-dot enabled-dot"></div>
+              <div>
+                <div class="acf-name">Placement Algorithm</div>
+                <div class="acf-desc">Adjust Top of Search % and Product Pages % based on campaign performance.</div>
+              </div>
+            </div>
+            <div class="acf-right">
+              <button class="toggle on" onclick="event.stopPropagation();toggleAlgo(this)"></button>
+              <svg class="acf-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <div class="acf-body">
+            <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:14px;padding:8px 10px;background:var(--bg4);border-radius:5px">TOP OF SEARCH placement</div>
+            <div class="acf-grid">
+              <div class="acf-field">
+                <label class="acf-label">Target ACOS for ToS (%)</label>
+                <input class="acf-input" type="number" value="20" min="1" max="100"/>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Max ToS Adjustment (%)</label>
+                <input class="acf-input" type="number" value="50" min="0" max="900"/>
+                <span class="acf-hint">Max bid modifier for Top of Search</span>
+              </div>
+            </div>
+            <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin:14px 0;padding:8px 10px;background:var(--bg4);border-radius:5px">PRODUCT PAGES placement</div>
+            <div class="acf-grid">
+              <div class="acf-field">
+                <label class="acf-label">Target ACOS for PP (%)</label>
+                <input class="acf-input" type="number" value="35" min="1" max="100"/>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Max PP Adjustment (%)</label>
+                <input class="acf-input" type="number" value="30" min="0" max="900"/>
+              </div>
+            </div>
+            <div class="acf-grid">
+              <div class="acf-field">
+                <label class="acf-label">Lookback Window (days)</label>
+                <input class="acf-input" type="number" value="14" min="1" max="90"/>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Min Clicks to Adjust</label>
+                <input class="acf-input" type="number" value="20" min="1"/>
+                <span class="acf-hint">Minimum clicks before adjusting placement</span>
+              </div>
+            </div>
+            <div class="acf-actions">
+              <button class="btn btn-primary" onclick="saveAlgo('ac-placement')">Save settings</button>
+              <span class="acf-save-msg" id="save-ac-placement"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8. BLACKLIST -->
+        <div class="algo-card-full" id="ac-blacklist">
+          <div class="acf-header" onclick="toggleAlgoCard('ac-blacklist')">
+            <div class="acf-left">
+              <div class="acf-dot"></div>
+              <div>
+                <div class="acf-name">Blacklist Algorithm</div>
+                <div class="acf-desc">Define a global list of keywords to auto-negate across all campaigns.</div>
+              </div>
+            </div>
+            <div class="acf-right">
+              <button class="toggle off" onclick="event.stopPropagation();toggleAlgo(this)"></button>
+              <svg class="acf-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <div class="acf-body">
+            <div class="acf-grid">
+              <div class="acf-field">
+                <label class="acf-label">Negate as Match Type</label>
+                <select class="acf-select">
+                  <option selected>Exact</option>
+                  <option>Phrase</option>
+                  <option>Both</option>
+                </select>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Apply To</label>
+                <select class="acf-select">
+                  <option selected>All campaigns</option>
+                  <option>Selected campaigns only</option>
+                </select>
+              </div>
+            </div>
+            <div class="acf-field" style="margin-top:4px">
+              <label class="acf-label">Blacklisted Keywords</label>
+              <textarea class="acf-textarea" placeholder="Enter one keyword per line">steak knife
+bread knife set
+knife sharpener</textarea>
+              <span class="acf-hint">These will be negated in all active campaigns immediately</span>
+            </div>
+            <div class="acf-actions">
+              <button class="btn btn-primary" onclick="saveAlgo('ac-blacklist')">Save settings</button>
+              <span class="acf-save-msg" id="save-ac-blacklist"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 9. WHITELIST -->
+        <div class="algo-card-full" id="ac-whitelist">
+          <div class="acf-header" onclick="toggleAlgoCard('ac-whitelist')">
+            <div class="acf-left">
+              <div class="acf-dot"></div>
+              <div>
+                <div class="acf-name">Whitelist Algorithm</div>
+                <div class="acf-desc">Protect keywords from being negated by Negative, Negative Word, or Blacklist algorithms.</div>
+              </div>
+            </div>
+            <div class="acf-right">
+              <button class="toggle off" onclick="event.stopPropagation();toggleAlgo(this)"></button>
+              <svg class="acf-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <div class="acf-body">
+            <div class="acf-field">
+              <label class="acf-label">Protected Keywords</label>
+              <textarea class="acf-textarea" placeholder="Enter one keyword per line — these will never be negated">chef knife set
+professional kitchen knives
+japanese knife</textarea>
+              <span class="acf-hint">These keywords are immune to all negating algorithms</span>
+            </div>
+            <div class="acf-actions">
+              <button class="btn btn-primary" onclick="saveAlgo('ac-whitelist')">Save settings</button>
+              <span class="acf-save-msg" id="save-ac-whitelist"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 10. REVIVE ALGORITHM -->
+        <div class="algo-card-full enabled" id="ac-revive">
+          <div class="acf-header" onclick="toggleAlgoCard('ac-revive')">
+            <div class="acf-left">
+              <div class="acf-dot enabled-dot"></div>
+              <div>
+                <div class="acf-name">Revive Algorithm</div>
+                <div class="acf-desc">Raise bids on dormant keywords that have strong historical performance.</div>
+              </div>
+            </div>
+            <div class="acf-right">
+              <button class="toggle on" onclick="event.stopPropagation();toggleAlgo(this)"></button>
+              <svg class="acf-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <div class="acf-body">
+            <div class="acf-grid">
+              <div class="acf-field">
+                <label class="acf-label">Dormant After (days no clicks)</label>
+                <input class="acf-input" type="number" value="14" min="1"/>
+                <span class="acf-hint">Consider keyword dormant after this many days without clicks</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Historical ACOS Threshold (%)</label>
+                <input class="acf-input" type="number" value="35" min="1" max="200"/>
+                <span class="acf-hint">Only revive keywords whose historical ACOS was below this</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Min Historical Orders</label>
+                <input class="acf-input" type="number" value="2" min="1"/>
+                <span class="acf-hint">Minimum past orders needed to qualify for revival</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Revive Bid ($)</label>
+                <input class="acf-input" type="number" value="0.50" min="0.02" step="0.01"/>
+                <span class="acf-hint">Bid to set when reviving a dormant keyword</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Revive Attempt Limit</label>
+                <input class="acf-input" type="number" value="2" min="1" max="10"/>
+                <span class="acf-hint">Max times to attempt reviving the same keyword</span>
+              </div>
+            </div>
+            <div class="acf-actions">
+              <button class="btn btn-primary" onclick="saveAlgo('ac-revive')">Save settings</button>
+              <span class="acf-save-msg" id="save-ac-revive"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 11. DAILY BUDGET -->
+        <div class="algo-card-full enabled" id="ac-budget">
+          <div class="acf-header" onclick="toggleAlgoCard('ac-budget')">
+            <div class="acf-left">
+              <div class="acf-dot enabled-dot"></div>
+              <div>
+                <div class="acf-name">Daily Budget Algorithm</div>
+                <div class="acf-desc">Adjust campaign daily budgets by day of week or based on performance.</div>
+              </div>
+            </div>
+            <div class="acf-right">
+              <button class="toggle on" onclick="event.stopPropagation();toggleAlgo(this)"></button>
+              <svg class="acf-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <div class="acf-body">
+            <div class="acf-grid">
+              <div class="acf-field">
+                <label class="acf-label">Mode</label>
+                <select class="acf-select" onchange="toggleBudgetMode(this)">
+                  <option selected>By day of week</option>
+                  <option>By performance (ACOS)</option>
+                </select>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Base Daily Budget ($)</label>
+                <input class="acf-input" type="number" value="50" min="1"/>
+                <span class="acf-hint">Multipliers below are applied to this base</span>
+              </div>
+            </div>
+            <div id="budgetDayGrid">
+              <label class="acf-label" style="display:block;margin-bottom:8px">Budget Multiplier by Day</label>
+              <div class="day-budget-grid">
+                <div class="day-bud-item"><span class="day-label">Mon</span><input class="acf-input" type="number" value="1.0" min="0.1" max="5" step="0.1"/><span class="acf-hint">×</span></div>
+                <div class="day-bud-item"><span class="day-label">Tue</span><input class="acf-input" type="number" value="1.0" min="0.1" max="5" step="0.1"/><span class="acf-hint">×</span></div>
+                <div class="day-bud-item"><span class="day-label">Wed</span><input class="acf-input" type="number" value="1.0" min="0.1" max="5" step="0.1"/><span class="acf-hint">×</span></div>
+                <div class="day-bud-item"><span class="day-label">Thu</span><input class="acf-input" type="number" value="1.2" min="0.1" max="5" step="0.1"/><span class="acf-hint">×</span></div>
+                <div class="day-bud-item"><span class="day-label">Fri</span><input class="acf-input" type="number" value="1.5" min="0.1" max="5" step="0.1"/><span class="acf-hint">×</span></div>
+                <div class="day-bud-item"><span class="day-label">Sat</span><input class="acf-input" type="number" value="1.8" min="0.1" max="5" step="0.1"/><span class="acf-hint">×</span></div>
+                <div class="day-bud-item"><span class="day-label">Sun</span><input class="acf-input" type="number" value="1.5" min="0.1" max="5" step="0.1"/><span class="acf-hint">×</span></div>
+              </div>
+            </div>
+            <div class="acf-actions">
+              <button class="btn btn-primary" onclick="saveAlgo('ac-budget')">Save settings</button>
+              <span class="acf-save-msg" id="save-ac-budget"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 12. DEFAULT BID -->
+        <div class="algo-card-full" id="ac-defbid">
+          <div class="acf-header" onclick="toggleAlgoCard('ac-defbid')">
+            <div class="acf-left">
+              <div class="acf-dot"></div>
+              <div>
+                <div class="acf-name">Default Bid Algorithm</div>
+                <div class="acf-desc">Optimize default bids for automatic campaigns based on performance trends.</div>
+              </div>
+            </div>
+            <div class="acf-right">
+              <button class="toggle off" onclick="event.stopPropagation();toggleAlgo(this)"></button>
+              <svg class="acf-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <div class="acf-body">
+            <div class="acf-grid">
+              <div class="acf-field">
+                <label class="acf-label">Target ACOS (%)</label>
+                <input class="acf-input" type="number" value="30" min="1" max="200"/>
+                <span class="acf-hint">Optimize default bid toward this ACOS</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Min Default Bid ($)</label>
+                <input class="acf-input" type="number" value="0.25" min="0.02" step="0.01"/>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Max Default Bid ($)</label>
+                <input class="acf-input" type="number" value="3.00" min="0.10" step="0.10"/>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Max Adjustment per Cycle (%)</label>
+                <input class="acf-input" type="number" value="20" min="1" max="100"/>
+                <span class="acf-hint">Max % to change the default bid at a time</span>
+              </div>
+              <div class="acf-field">
+                <label class="acf-label">Lookback Window (days)</label>
+                <input class="acf-input" type="number" value="14" min="1" max="90"/>
+              </div>
+            </div>
+            <div class="acf-actions">
+              <button class="btn btn-primary" onclick="saveAlgo('ac-defbid')">Save settings</button>
+              <span class="acf-save-msg" id="save-ac-defbid"></span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ASINS PAGE -->
+      <div class="page" id="page-asins">
+        <div class="filter-bar">
+          <input class="search-input" placeholder="Search ASINs..." type="text"/>
+          <select class="filter-select"><option>All ASINs</option><option>Automated</option><option>Not Automated</option></select>
+          <span style="margin-left:auto;font-size:12px;color:var(--text3);font-family:var(--mono)">3 / 5 slots used</span>
+        </div>
+        <div class="asin-grid">
+          <div class="asin-card automated">
+            <div class="asin-top">
+              <div>
+                <div class="asin-name">Premium Kitchen Knife Set</div>
+                <div class="asin-id">B08KNFX2PL</div>
+              </div>
+              <span class="badge badge-green">Automated</span>
+            </div>
+            <div class="asin-metrics">
+              <div class="asin-metric"><div class="asin-metric-label">ACOS</div><div class="asin-metric-val" style="color:var(--accent)">22.4%</div></div>
+              <div class="asin-metric"><div class="asin-metric-label">Sales</div><div class="asin-metric-val">$4,210</div></div>
+              <div class="asin-metric"><div class="asin-metric-label">Spend</div><div class="asin-metric-val">$943</div></div>
+              <div class="asin-metric"><div class="asin-metric-label">Campaigns</div><div class="asin-metric-val">4</div></div>
+            </div>
+          </div>
+          <div class="asin-card automated">
+            <div class="asin-top">
+              <div>
+                <div class="asin-name">Santoku Chef Knife</div>
+                <div class="asin-id">B07TQZK2WR</div>
+              </div>
+              <span class="badge badge-green">Automated</span>
+            </div>
+            <div class="asin-metrics">
+              <div class="asin-metric"><div class="asin-metric-label">ACOS</div><div class="asin-metric-val" style="color:var(--amber)">31.0%</div></div>
+              <div class="asin-metric"><div class="asin-metric-label">Sales</div><div class="asin-metric-val">$2,880</div></div>
+              <div class="asin-metric"><div class="asin-metric-label">Spend</div><div class="asin-metric-val">$893</div></div>
+              <div class="asin-metric"><div class="asin-metric-label">Campaigns</div><div class="asin-metric-val">3</div></div>
+            </div>
+          </div>
+          <div class="asin-card automated">
+            <div class="asin-top">
+              <div>
+                <div class="asin-name">Bread Knife - 10 inch</div>
+                <div class="asin-id">B09HZPQ4RW</div>
+              </div>
+              <span class="badge badge-green">Automated</span>
+            </div>
+            <div class="asin-metrics">
+              <div class="asin-metric"><div class="asin-metric-label">ACOS</div><div class="asin-metric-val" style="color:var(--accent)">18.7%</div></div>
+              <div class="asin-metric"><div class="asin-metric-label">Sales</div><div class="asin-metric-val">$1,540</div></div>
+              <div class="asin-metric"><div class="asin-metric-label">Spend</div><div class="asin-metric-val">$288</div></div>
+              <div class="asin-metric"><div class="asin-metric-label">Campaigns</div><div class="asin-metric-val">2</div></div>
+            </div>
+          </div>
+          <div class="asin-card">
+            <div class="asin-top">
+              <div>
+                <div class="asin-name">Paring Knife Set (3pc)</div>
+                <div class="asin-id">B0CLQW7RPX</div>
+              </div>
+              <span class="badge badge-gray">Not automated</span>
+            </div>
+            <div class="asin-metrics">
+              <div class="asin-metric"><div class="asin-metric-label">ACOS</div><div class="asin-metric-val" style="color:var(--text3)">—</div></div>
+              <div class="asin-metric"><div class="asin-metric-label">Sales</div><div class="asin-metric-val" style="color:var(--text3)">—</div></div>
+              <div class="asin-metric"><div class="asin-metric-label">Spend</div><div class="asin-metric-val" style="color:var(--text3)">—</div></div>
+              <div class="asin-metric"><div class="asin-metric-label">Campaigns</div><div class="asin-metric-val">1</div></div>
+            </div>
+          </div>
+          <div class="asin-card" style="border:1px dashed var(--border2);display:flex;align-items:center;justify-content:center;min-height:180px;cursor:pointer;background:transparent;" onclick="navigate('connect',null)">
+            <div style="text-align:center">
+              <div style="font-size:24px;color:var(--border2);margin-bottom:8px;">+</div>
+              <div style="font-size:12px;color:var(--text3)">Add ASIN slot</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:4px">2 slots remaining</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DAYPARTING PAGE -->
+      <div class="page" id="page-dayparting">
+        <div class="table-wrap">
+          <div class="table-header">
+            <span class="table-header-title">Hourly Performance Heatmap (sample data)</span>
+            <div style="display:flex;gap:16px;font-size:11px;font-family:var(--mono);align-items:center">
+              <span style="color:var(--text3)">Low ACOS (good)</span>
+              <div style="display:flex;gap:2px;align-items:center">
+                <div style="width:12px;height:12px;border-radius:2px;background:rgba(0,200,150,0.9)"></div>
+                <div style="width:12px;height:12px;border-radius:2px;background:rgba(0,200,150,0.5)"></div>
+                <div style="width:12px;height:12px;border-radius:2px;background:rgba(245,166,35,0.5)"></div>
+                <div style="width:12px;height:12px;border-radius:2px;background:rgba(255,77,106,0.6)"></div>
+              </div>
+              <span style="color:var(--text3)">High ACOS (poor)</span>
+            </div>
+          </div>
+          <div style="padding:20px;overflow-x:auto" id="heatmapContainer"></div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;">
+          <div class="section-header" style="margin-bottom:16px">
+            <span class="section-title">Day Parting Rules</span>
+            <button class="btn btn-primary" style="font-size:12px;padding:5px 12px">+ Add Rule</button>
+          </div>
+          <table><thead><tr><th>Hours</th><th>Days</th><th>Action</th><th>Campaign</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr>
+              <td style="font-family:var(--mono)">00:00 – 06:00</td>
+              <td>Mon – Fri</td>
+              <td><span class="badge badge-amber">Pause Ads</span></td>
+              <td style="color:var(--text2)">All campaigns</td>
+              <td><span class="badge badge-green">Active</span></td>
+            </tr>
+            <tr>
+              <td style="font-family:var(--mono)">18:00 – 21:00</td>
+              <td>Sat – Sun</td>
+              <td><span class="badge badge-blue">Increase Bid +20%</span></td>
+              <td style="color:var(--text2)">Auto - Kitchen Knife Set</td>
+              <td><span class="badge badge-green">Active</span></td>
+            </tr>
+          </tbody></table>
+        </div>
+      </div>
+
+      <!-- ANALYTICS PAGE -->
+      <div class="page" id="page-analytics">
+        <div class="tabs">
+          <div class="tab active" onclick="switchTab(this,'tab-organic')">Organic vs PPC</div>
+          <div class="tab" onclick="switchTab(this,'tab-trends')">Trends</div>
+          <div class="tab" onclick="switchTab(this,'tab-searchterms')">Aggregated Search Terms</div>
+          <div class="tab" onclick="switchTab(this,'tab-competing')">Competing Keywords</div>
+        </div>
+
+        <div id="tab-organic">
+          <div class="metric-grid" style="grid-template-columns:repeat(4,1fr)">
+            <div class="metric-card"><div class="metric-label">Total Sales</div><div class="metric-value">$8,512</div><div class="metric-delta up">↑ 12.4%</div></div>
+            <div class="metric-card"><div class="metric-label">PPC Sales</div><div class="metric-value">$3,212</div><div class="metric-delta up">↑ 8.1%</div></div>
+            <div class="metric-card"><div class="metric-label">Organic Sales</div><div class="metric-value">$5,300</div><div class="metric-delta up">↑ 15.2%</div></div>
+            <div class="metric-card"><div class="metric-label">TACoS</div><div class="metric-value">11.1%</div><div class="metric-delta down">↑ 1.2%</div></div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;margin-top:16px">
+            <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:16px">Organic vs PPC Sales Breakdown (30 days)</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;gap:12px;font-size:12px">
+                <span style="color:var(--text3);width:80px;font-family:var(--mono)">Organic</span>
+                <div style="flex:1;height:20px;background:var(--bg4);border-radius:3px;overflow:hidden"><div style="height:100%;width:62%;background:var(--blue);border-radius:3px"></div></div>
+                <span style="font-family:var(--mono);color:var(--text2);width:50px;text-align:right">62.3%</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;font-size:12px">
+                <span style="color:var(--text3);width:80px;font-family:var(--mono)">PPC</span>
+                <div style="flex:1;height:20px;background:var(--bg4);border-radius:3px;overflow:hidden"><div style="height:100%;width:37.7%;background:var(--accent);border-radius:3px"></div></div>
+                <span style="font-family:var(--mono);color:var(--text2);width:50px;text-align:right">37.7%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-trends" style="display:none">
+          <div class="empty-state">Connect Amazon Ads to view trend data across weekly, monthly, and moving average metrics.</div>
+        </div>
+        <div id="tab-searchterms" style="display:none">
+          <div class="empty-state">Connect Amazon Ads to view aggregated search term performance across all products.</div>
+        </div>
+        <div id="tab-competing" style="display:none">
+          <div class="empty-state">Connect Amazon Ads to identify competing keywords running across multiple campaigns.</div>
+        </div>
+      </div>
+
+      <!-- PRODUCTS PAGE -->
+      <div class="page" id="page-products">
+        <div class="table-wrap">
+          <div class="table-header">
+            <span class="table-header-title">Product Performance</span>
+            <select class="filter-select"><option>Last 30 days</option><option>Last 14 days</option><option>Last 7 days</option></select>
+          </div>
+          <table>
+            <thead><tr><th>Product</th><th>ASIN</th><th>Total Sales</th><th>PPC Sales</th><th>Organic</th><th>Ad Spend</th><th>ACOS</th><th>TACoS</th><th>Profit</th><th>Margin</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Premium Kitchen Knife Set</td>
+                <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">B08KNFX2PL</td>
+                <td style="font-family:var(--mono)">$4,210</td>
+                <td style="font-family:var(--mono)">$1,880</td>
+                <td style="font-family:var(--mono)">$2,330</td>
+                <td style="font-family:var(--mono)">$421</td>
+                <td><div class="acos-bar"><div class="bar-track"><div class="bar-fill good" style="width:22.4%"></div></div><span class="bar-val">22.4%</span></div></td>
+                <td style="font-family:var(--mono)">10.0%</td>
+                <td style="font-family:var(--mono);color:var(--accent)">$1,820</td>
+                <td style="font-family:var(--mono);color:var(--accent)">43.2%</td>
+              </tr>
+              <tr>
+                <td>Santoku Chef Knife</td>
+                <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">B07TQZK2WR</td>
+                <td style="font-family:var(--mono)">$2,880</td>
+                <td style="font-family:var(--mono)">$1,200</td>
+                <td style="font-family:var(--mono)">$1,680</td>
+                <td style="font-family:var(--mono)">$372</td>
+                <td><div class="acos-bar"><div class="bar-track"><div class="bar-fill warn" style="width:31%"></div></div><span class="bar-val">31.0%</span></div></td>
+                <td style="font-family:var(--mono)">12.9%</td>
+                <td style="font-family:var(--mono);color:var(--amber)">$840</td>
+                <td style="font-family:var(--mono);color:var(--amber)">29.2%</td>
+              </tr>
+              <tr>
+                <td>Bread Knife - 10 inch</td>
+                <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">B09HZPQ4RW</td>
+                <td style="font-family:var(--mono)">$1,540</td>
+                <td style="font-family:var(--mono)">$680</td>
+                <td style="font-family:var(--mono)">$860</td>
+                <td style="font-family:var(--mono)">$127</td>
+                <td><div class="acos-bar"><div class="bar-track"><div class="bar-fill good" style="width:18.7%"></div></div><span class="bar-val">18.7%</span></div></td>
+                <td style="font-family:var(--mono)">8.2%</td>
+                <td style="font-family:var(--mono);color:var(--accent)">$692</td>
+                <td style="font-family:var(--mono);color:var(--accent)">44.9%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RESTOCK PAGE -->
+      <div class="page" id="page-restock">
+        <div class="table-wrap">
+          <div class="table-header">
+            <span class="table-header-title">Restock Forecast</span>
+            <span style="font-size:11px;color:var(--red);font-family:var(--mono)">2 ASINs need restock soon</span>
+          </div>
+          <table>
+            <thead><tr><th>Product</th><th>ASIN</th><th>In Stock</th><th>Daily Sales</th><th>Days Left</th><th>Restock Date</th><th>Restock Qty</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Premium Kitchen Knife Set</td>
+                <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">B08KNFX2PL</td>
+                <td style="font-family:var(--mono)">142</td>
+                <td style="font-family:var(--mono)">4.8</td>
+                <td>
+                  <div style="font-family:var(--mono);color:var(--amber);margin-bottom:4px">29 days</div>
+                  <div class="restock-bar"><div class="restock-fill" style="width:29%;background:var(--amber)"></div></div>
+                </td>
+                <td style="font-family:var(--mono);color:var(--text2)">Apr 23, 2026</td>
+                <td style="font-family:var(--mono)">500</td>
+                <td><span class="badge badge-amber">Order soon</span></td>
+              </tr>
+              <tr>
+                <td>Santoku Chef Knife</td>
+                <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">B07TQZK2WR</td>
+                <td style="font-family:var(--mono)">28</td>
+                <td style="font-family:var(--mono)">3.2</td>
+                <td>
+                  <div style="font-family:var(--mono);color:var(--red);margin-bottom:4px">9 days</div>
+                  <div class="restock-bar"><div class="restock-fill" style="width:9%;background:var(--red)"></div></div>
+                </td>
+                <td style="font-family:var(--mono);color:var(--red)">Apr 3, 2026</td>
+                <td style="font-family:var(--mono)">300</td>
+                <td><span class="badge badge-red">Urgent</span></td>
+              </tr>
+              <tr>
+                <td>Bread Knife - 10 inch</td>
+                <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">B09HZPQ4RW</td>
+                <td style="font-family:var(--mono)">380</td>
+                <td style="font-family:var(--mono)">2.1</td>
+                <td>
+                  <div style="font-family:var(--mono);color:var(--accent);margin-bottom:4px">181 days</div>
+                  <div class="restock-bar"><div class="restock-fill" style="width:100%;background:var(--accent)"></div></div>
+                </td>
+                <td style="font-family:var(--mono);color:var(--text2)">Sep 22, 2026</td>
+                <td style="font-family:var(--mono)">500</td>
+                <td><span class="badge badge-green">OK</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CONNECT PAGE -->
+      <div class="page" id="page-connect">
+        <div class="connect-banner">
+          <div class="logo-mark" style="width:48px;height:48px;border-radius:12px">
+            <svg viewBox="0 0 16 16" fill="none" style="width:24px;height:24px">
+              <path d="M3 12L8 4L13 12" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M5.5 9H10.5" stroke="#000" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h2>Connect your Amazon Ads account</h2>
+          <p>AdScale connects directly to Amazon Ads via their official API. You'll need Amazon Ads API credentials — this is a one-time setup that gives you full control over your data.</p>
+
+          <div class="step-list">
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-content">
+                <h4>Create an Amazon Ads API application</h4>
+                <p>Go to advertising.amazon.com → Tools → API Access → Apply for credentials. You'll get a Client ID and Client Secret.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-content">
+                <h4>Enter your API credentials</h4>
+                <p>Paste your Client ID and Client Secret below. These are stored locally — never shared.</p>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+                  <input class="search-input" style="max-width:100%;font-family:var(--mono);font-size:12px" placeholder="Client ID (e.g. amzn1.application-oa2-client.xxx)" type="text"/>
+                  <input class="search-input" style="max-width:100%;font-family:var(--mono);font-size:12px" placeholder="Client Secret" type="password"/>
+                </div>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-content">
+                <h4>Authorize with Amazon (OAuth)</h4>
+                <p>Click below to open Amazon's login page and grant AdScale read/write access to your ad account.</p>
+                <code>Redirect URI: http://localhost:3000/auth/callback</code>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">4</div>
+              <div class="step-content">
+                <h4>Select your marketplace</h4>
+                <p>Choose which Amazon marketplace to connect (US, UK, EU, etc.). You can add more marketplaces later.</p>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-primary" style="padding:10px 24px;" onclick="simulateConnect()">Authorize with Amazon →</button>
+            <a href="https://advertising.amazon.com/API/docs" target="_blank"><button class="btn" style="padding:10px 18px;">API Docs ↗</button></a>
+          </div>
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">Amazon Ads API · OAuth 2.0 · Read/Write Scope</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// AdScale — API connection layer
+// ================================================================
+
+const API = {
+  async post(url, body) {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body),
+    });
+    return r.json();
+  },
+  async get(url) {
+    const r = await fetch(url, { credentials: 'include' });
+    return r.json();
+  },
+  async put(url, body) {
+    const r = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body),
+    });
+    return r.json();
+  },
+};
+
+// ----------------------------------------------------------------
+// Login screen — shown until authenticated
+// ----------------------------------------------------------------
+function buildLoginScreen() {
+  const el = document.createElement('div');
+  el.id = 'loginScreen';
+  el.style.cssText = `
+    position: fixed; inset: 0; z-index: 9999;
+    background: #0a0c0f;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Sans', sans-serif;
+  `;
+  el.innerHTML = `
+    <div style="width:360px;display:flex;flex-direction:column;align-items:center;gap:24px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div style="width:36px;height:36px;background:#00c896;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+          <svg viewBox="0 0 16 16" fill="none" style="width:20px;height:20px;">
+            <path d="M3 12L8 4L13 12" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M5.5 9H10.5" stroke="#000" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span style="font-size:20px;font-weight:500;color:#e8eaf0;">Ad<span style="color:#00c896;">Scale</span></span>
+      </div>
+
+      <div style="width:100%;background:#111418;border:1px solid #252b35;border-radius:12px;padding:28px;">
+        <div style="font-size:14px;color:#8a94a6;margin-bottom:20px;text-align:center;">Enter your password to continue</div>
+
+        <input
+          id="loginPassword"
+          type="password"
+          placeholder="Password"
+          style="width:100%;background:#181c22;border:1px solid #252b35;border-radius:6px;padding:10px 14px;color:#e8eaf0;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:12px;box-sizing:border-box;"
+          onkeydown="if(event.key==='Enter')doLogin()"
+        />
+
+        <button
+          onclick="doLogin()"
+          style="width:100%;background:#00c896;border:none;border-radius:6px;padding:10px;color:#000;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;"
+        >Sign in</button>
+
+        <div id="loginError" style="color:#ff4d6a;font-size:12px;margin-top:10px;text-align:center;display:none;"></div>
+      </div>
+
+      <div style="font-size:11px;color:#535d6e;font-family:'IBM Plex Mono',monospace;">AdScale · Private access only</div>
+    </div>
+  `;
+  document.body.appendChild(el);
+}
+
+async function doLogin() {
+  const pw  = document.getElementById('loginPassword').value;
+  const err = document.getElementById('loginError');
+  const btn = document.querySelector('#loginScreen button');
+
+  if (!pw) { showLoginError('Please enter your password.'); return; }
+
+  btn.textContent = 'Signing in...';
+  btn.style.opacity = '0.7';
+
+  try {
+    const result = await API.post('/auth/login', { password: pw });
+    if (result.success) {
+      document.getElementById('loginScreen').remove();
+      await initApp();
+    } else {
+      showLoginError(result.error || 'Incorrect password.');
+      btn.textContent = 'Sign in';
+      btn.style.opacity = '1';
+    }
+  } catch (e) {
+    showLoginError('Could not reach server. Is it running?');
+    btn.textContent = 'Sign in';
+    btn.style.opacity = '1';
+  }
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+// ----------------------------------------------------------------
+// App initialization — runs after login
+// ----------------------------------------------------------------
+async function initApp() {
+  try {
+    const status = await API.get('/auth/status');
+    if (!status.loggedIn) { buildLoginScreen(); return; }
+
+    // Update connection status in sidebar
+    updateConnectionStatus(status.amazonConnected, status.profileName);
+
+    // Load portfolios into campaigns filter
+    if (status.amazonConnected) {
+      await loadPortfolios();
+      await loadDashboardData();
+    }
+  } catch (e) {
+    console.error('Init error:', e);
+  }
+}
+
+function updateConnectionStatus(connected, profileName) {
+  const dot   = document.getElementById('connDot');
+  const label = document.getElementById('connLabel');
+  if (!dot || !label) return;
+  if (connected) {
+    dot.classList.add('connected');
+    label.textContent = profileName || 'Connected';
+  } else {
+    dot.classList.remove('connected');
+    label.textContent = 'Not connected';
+  }
+}
+
+// ----------------------------------------------------------------
+// Load real portfolios into the campaigns filter dropdown
+// ----------------------------------------------------------------
+async function loadPortfolios() {
+  try {
+    const portfolios = await API.get('/api/portfolios');
+    const select = document.getElementById('portfolioFilter');
+    if (!select || !Array.isArray(portfolios)) return;
+
+    // Clear sample options, keep "All Portfolios"
+    select.innerHTML = '<option value="">All Portfolios</option>';
+
+    portfolios.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.portfolioId;
+      opt.textContent = '🗂 ' + p.name;
+      select.appendChild(opt);
+    });
+
+    // Add "No Portfolio" at end
+    const none = document.createElement('option');
+    none.value = 'none';
+    none.textContent = '— No Portfolio';
+    select.appendChild(none);
+  } catch (e) {
+    console.warn('Could not load portfolios:', e.message);
+  }
+}
+
+// ----------------------------------------------------------------
+// Load real campaign data into dashboard
+// ----------------------------------------------------------------
+async function loadDashboardData() {
+  try {
+    const campaigns = await API.get('/api/campaigns');
+    if (!Array.isArray(campaigns) || campaigns.length === 0) return;
+
+    // Remove the sample data banner once real data loads
+    const banner = document.querySelector('[style*="border: 1px dashed"]');
+    if (banner) banner.remove();
+
+    // Update metric cards with real totals
+    updateMetricCards(campaigns);
+  } catch (e) {
+    console.warn('Could not load dashboard data:', e.message);
+  }
+}
+
+function updateMetricCards(campaigns) {
+  // These will be populated from real reporting data once
+  // the Amazon report API is wired up fully
+  const cards = document.querySelectorAll('.metric-card');
+  if (cards.length > 0) {
+    cards[0].querySelector('.metric-value').textContent = campaigns.length + ' campaigns';
+    cards[0].querySelector('.metric-label').textContent = 'Active Campaigns';
+    cards[0].querySelector('.metric-delta').textContent = 'Live data';
+    cards[0].querySelector('.metric-delta').className = 'metric-delta up';
+  }
+}
+
+// ----------------------------------------------------------------
+// Keyword bid update — now pushes to Amazon API
+// ----------------------------------------------------------------
+async function saveBid(input) {
+  const val = parseFloat(input.value);
+  if (isNaN(val) || val < 0.02) input.value = '0.02';
+  const cell = input.closest('.bid-cell');
+
+  const row = input.closest('tr');
+  const kwId = row ? row.dataset.keywordId : null;
+
+  cell.classList.add('bid-saved');
+  setTimeout(() => cell.classList.remove('bid-saved'), 1200);
+
+  // Push to Amazon if connected and keyword ID exists
+  if (kwId) {
+    try {
+      await API.put(`/api/keywords/${kwId}`, { bid: parseFloat(input.value) });
+    } catch (e) {
+      console.warn('Bid update failed:', e.message);
+    }
+  }
+}
+
+// ----------------------------------------------------------------
+// Keyword enable/pause — now pushes to Amazon API
+// ----------------------------------------------------------------
+async function toggleKw(btn) {
+  const row = btn.closest('tr');
+  const stateCell = row.querySelector('.kw-state-cell');
+  const isEnabled = btn.classList.contains('enabled');
+  const newState = isEnabled ? 'paused' : 'enabled';
+
+  if (isEnabled) {
+    btn.textContent = 'Enable';
+    btn.classList.remove('enabled'); btn.classList.add('paused');
+    row.dataset.state = 'paused';
+    stateCell.innerHTML = '<span class="badge badge-amber">Paused</span>';
+  } else {
+    btn.textContent = 'Pause';
+    btn.classList.remove('paused'); btn.classList.add('enabled');
+    row.dataset.state = 'enabled';
+    stateCell.innerHTML = '<span class="badge badge-green">Enabled</span>';
+  }
+
+  const kwId = row.dataset.keywordId;
+  if (kwId) {
+    try {
+      await API.put(`/api/keywords/${kwId}`, { state: newState });
+    } catch (e) {
+      console.warn('State update failed:', e.message);
+    }
+  }
+}
+
+// ----------------------------------------------------------------
+// Amazon connect button — now triggers real OAuth
+// ----------------------------------------------------------------
+function simulateConnect() {
+  window.location.href = '/auth/amazon';
+}
+
+// ----------------------------------------------------------------
+// Logout
+// ----------------------------------------------------------------
+async function logout() {
+  await API.post('/auth/logout', {});
+  window.location.reload();
+}
+
+// ----------------------------------------------------------------
+// Startup — check session, show login if needed
+// ----------------------------------------------------------------
+(async () => {
+  buildLoginScreen();
+  try {
+    const status = await API.get('/auth/status');
+    if (status.loggedIn) {
+      document.getElementById('loginScreen').remove();
+      await initApp();
+    }
+    // else: login screen stays visible
+  } catch (e) {
+    // Server not reachable — login screen stays, shows error on attempt
+    console.warn('Server not reachable:', e.message);
+  }
+})();
+
+// ================================================================
+// Original app JS below
+// ================================================================
+
+const pageTitles = {
+  dashboard: 'Dashboard',
+  campaigns: 'Campaigns',
+  keywords: 'Keywords',
+  'search-terms': 'Search Terms',
+  algorithms: 'Algorithms',
+  asins: 'ASINs',
+  dayparting: 'Day Parting',
+  analytics: 'Analytics',
+  products: 'Product Performance',
+  restock: 'Restock Forecast',
+  connect: 'Connect Amazon Ads'
+};
+
+function navigate(pageId, navEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById('page-' + pageId);
+  if (page) page.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (navEl) navEl.classList.add('active');
+  document.getElementById('pageTitle').textContent = pageTitles[pageId] || pageId;
+}
+
+function toggleAlgo(btn) {
+  const card = btn.closest('.algo-card-full') || btn.closest('.algo-card');
+  const dot = card ? card.querySelector('.acf-dot') : null;
+  if (btn.classList.contains('on')) {
+    btn.classList.remove('on'); btn.classList.add('off');
+    if (card) card.classList.remove('enabled');
+    if (dot) dot.classList.remove('enabled-dot');
+  } else {
+    btn.classList.remove('off'); btn.classList.add('on');
+    if (card) card.classList.add('enabled');
+    if (dot) dot.classList.add('enabled-dot');
+  }
+  updateAlgoCount();
+}
+
+function toggleAlgoCard(id) {
+  const card = document.getElementById(id);
+  card.classList.toggle('open');
+}
+
+function saveAlgo(id) {
+  const msg = document.getElementById('save-' + id);
+  if (!msg) return;
+  msg.textContent = '✓ Saved';
+  msg.classList.add('show');
+  setTimeout(() => { msg.classList.remove('show'); msg.textContent = ''; }, 2200);
+}
+
+function updateAlgoCount() {
+  const total = document.querySelectorAll('.algo-card-full').length;
+  const active = document.querySelectorAll('.algo-card-full.enabled').length;
+  const el = document.getElementById('algoCount');
+  if (el) el.textContent = active + ' of ' + total + ' active';
+}
+
+function toggleBudgetMode(sel) {
+  const grid = document.getElementById('budgetDayGrid');
+  if (grid) grid.style.display = sel.value === 'By day of week' ? 'block' : 'none';
+}
+
+// Build hour grid for dayparting algorithm
+function buildHourGrid() {
+  const grid = document.getElementById('hourGrid');
+  if (!grid) return;
+  const offHours = [0,1,2,3,4,5,23];
+  for (let h = 0; h < 24; h++) {
+    const cell = document.createElement('div');
+    const isOn = !offHours.includes(h);
+    cell.className = 'hour-cell ' + (isOn ? 'on' : 'off');
+    cell.textContent = h;
+    cell.title = h + ':00 — click to toggle';
+    cell.onclick = () => {
+      const on = cell.classList.contains('on');
+      cell.classList.toggle('on', !on);
+      cell.classList.toggle('off', on);
+    };
+    grid.appendChild(cell);
+  }
+}
+buildHourGrid();
+
+function switchTab(tabEl, tabId) {
+  document.querySelectorAll('#page-analytics .tab').forEach(t => t.classList.remove('active'));
+  tabEl.classList.add('active');
+  ['tab-organic','tab-trends','tab-searchterms','tab-competing'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = id === tabId ? 'block' : 'none';
+  });
+}
+
+function simulateConnect() {
+  const dot = document.getElementById('connDot');
+  const label = document.getElementById('connLabel');
+  dot.classList.add('connected');
+  label.textContent = 'Connected';
+  alert('In the real app, this would open Amazon\'s OAuth page. Once authorized, your live campaign data will populate all sections.');
+}
+
+function filterCampaignsByPortfolio(value) {
+  document.querySelectorAll('#campaignTableBody tr').forEach(row => {
+    row.style.display = (!value || row.dataset.portfolio === value) ? '' : 'none';
+  });
+}
+
+function toggleKw(btn) {
+  const row = btn.closest('tr');
+  const stateCell = row.querySelector('.kw-state-cell');
+  const isEnabled = btn.classList.contains('enabled');
+  if (isEnabled) {
+    btn.textContent = 'Enable';
+    btn.classList.remove('enabled'); btn.classList.add('paused');
+    row.dataset.state = 'paused';
+    stateCell.innerHTML = '<span class="badge badge-amber">Paused</span>';
+  } else {
+    btn.textContent = 'Pause';
+    btn.classList.remove('paused'); btn.classList.add('enabled');
+    row.dataset.state = 'enabled';
+    stateCell.innerHTML = '<span class="badge badge-green">Enabled</span>';
+  }
+}
+
+function saveBid(input) {
+  const val = parseFloat(input.value);
+  if (isNaN(val) || val < 0.02) input.value = '0.02';
+  const cell = input.closest('.bid-cell');
+  cell.classList.add('bid-saved');
+  setTimeout(() => cell.classList.remove('bid-saved'), 1200);
+}
+
+function bidKeydown(e, input) {
+  if (e.key === 'Enter') { input.blur(); saveBid(input); }
+  if (e.key === 'Escape') input.blur();
+}
+
+function filterKeywords() { /* placeholder — wire to real data when API connected */ }
+
+// Date
+const d = new Date();
+document.getElementById('currentDate').textContent = d.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
+
+// Sample chart
+const salesData = [42,58,35,72,88,65,94,80];
+const spendData = [18,22,14,28,32,24,38,30];
+const chart = document.getElementById('salesChart');
+const maxVal = Math.max(...salesData,...spendData);
+salesData.forEach((v,i) => {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;height:100%';
+  const s = document.createElement('div');
+  s.className = 'mini-bar';
+  s.style.cssText = `height:${(v/maxVal)*100}%;background:rgba(0,200,150,0.7);width:100%`;
+  const sp = document.createElement('div');
+  sp.className = 'mini-bar';
+  sp.style.cssText = `height:${(spendData[i]/maxVal)*100}%;background:rgba(74,158,255,0.6);width:100%;margin-top:-${(v/maxVal)*100}%`;
+  wrap.appendChild(s);
+  chart.appendChild(wrap);
+});
+
+// Heatmap
+const heatmap = document.getElementById('heatmapContainer');
+const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const hours = Array.from({length:24},(_,i)=> i);
+const acosData = days.map(() => hours.map(() => 10 + Math.random()*55));
+let html = '<div style="display:grid;grid-template-columns:40px repeat(24,1fr);gap:2px;">';
+html += '<div></div>' + hours.map(h=>`<div style="font-size:9px;color:var(--text3);font-family:var(--mono);text-align:center">${h}h</div>`).join('');
+days.forEach((day,di) => {
+  html += `<div style="font-size:10px;color:var(--text3);font-family:var(--mono);display:flex;align-items:center">${day}</div>`;
+  hours.forEach((h,hi) => {
+    const v = acosData[di][hi];
+    let bg;
+    if(v<20) bg='rgba(0,200,150,0.85)';
+    else if(v<30) bg='rgba(0,200,150,0.4)';
+    else if(v<42) bg='rgba(245,166,35,0.5)';
+    else bg='rgba(255,77,106,0.6)';
+    html += `<div title="${day} ${h}:00 — ACOS: ${v.toFixed(1)}%" style="height:22px;border-radius:2px;background:${bg};cursor:pointer"></div>`;
+  });
+});
+html += '</div>';
+heatmap.innerHTML = html;
+</script>
+</body>
+</html>
