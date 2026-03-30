@@ -557,91 +557,6 @@ initDatabase().then(() => {
     console.log('');
   });
 });
-const express      = require('express');
-const session      = require('express-session');
-const rateLimit    = require('express-rate-limit');
-const helmet       = require('helmet');
-const cors         = require('cors');
-const axios        = require('axios');
-const path         = require('path');
-const SQLiteStore  = require('connect-sqlite3')(session);
-
-const app  = express();
-const PORT = process.env.PORT || 3000;
-
-// ----------------------------------------------------------------
-// Environment variable validation
-// ----------------------------------------------------------------
-const REQUIRED_VARS = ['APP_PASSWORD', 'SESSION_SECRET'];
-const missing = REQUIRED_VARS.filter(v => !process.env[v]);
-if (missing.length > 0) {
-  console.error('ERROR: Missing required environment variables:', missing.join(', '));
-  console.error('Copy .env.example to .env and fill in your values.');
-  process.exit(1);
-}
-
-// ----------------------------------------------------------------
-// Amazon Ads API config
-// ----------------------------------------------------------------
-const AMAZON = {
-  clientId:     process.env.AMAZON_CLIENT_ID     || '',
-  clientSecret: process.env.AMAZON_CLIENT_SECRET || '',
-  region:       process.env.AMAZON_REGION        || 'EU',
-  redirectUri:  process.env.AMAZON_REDIRECT_URI  || `http://localhost:${PORT}/auth/callback`,
-};
-
-// Region endpoint mapping
-const REGION_ENDPOINTS = {
-  NA: 'https://advertising-api.amazon.com',
-  EU: 'https://advertising-api-eu.amazon.com',
-  FE: 'https://advertising-api-fe.amazon.com',
-};
-const AMAZON_TOKEN_URL = 'https://api.amazon.com/auth/o2/token';
-const AMAZON_AUTH_URL  = 'https://www.amazon.com/ap/oa';
-const API_BASE         = REGION_ENDPOINTS[AMAZON.region] || REGION_ENDPOINTS.EU;
-
-// ----------------------------------------------------------------
-// Security: IP allowlist middleware (optional)
-// ----------------------------------------------------------------
-function ipAllowlist(req, res, next) {
-  const allowed = process.env.ALLOWED_IPS;
-  if (!allowed || allowed.trim() === '') return next(); // disabled
-
-  const allowedList = allowed.split(',').map(ip => ip.trim());
-  const clientIp = (
-    req.headers['x-forwarded-for'] ||
-    req.socket.remoteAddress ||
-    ''
-  ).split(',')[0].trim();
-
-  if (allowedList.includes(clientIp)) return next();
-
-  console.warn(`Blocked IP: ${clientIp}`);
-  return res.status(403).json({ error: 'Access denied.' });
-}
-
-// ----------------------------------------------------------------
-// Security: Rate limiter for login endpoint
-// ----------------------------------------------------------------
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5,                    // max 5 attempts per window
-  message: { error: 'Too many login attempts. Try again in 15 minutes.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// General API rate limiter
-const apiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 100,
-  message: { error: 'Too many requests. Slow down.' },
-});
-
-// ----------------------------------------------------------------
-// Middleware setup
-// ----------------------------------------------------------------
-app.set('trust proxy', 1); // Required for Railway / reverse proxies
 
 app.use(helmet({
   contentSecurityPolicy: false, // Disabled so our HTML app loads correctly
@@ -1096,4 +1011,6 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`  Region: ${AMAZON.region}`);
   console.log(`  IP allowlist: ${process.env.ALLOWED_IPS ? 'enabled' : 'disabled'}`);
   console.log('');
+  });
 });
+
