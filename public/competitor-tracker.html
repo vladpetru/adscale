@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AdScale — Competitor Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0a0c0f;
+    --surface:   #0f1217;
+    --surface2:  #141820;
+    --surface3:  #1a2030;
+    --border:    #1e2535;
+    --border2:   #252d40;
+    --accent:    #00d4ff;
+    --accent2:   #0099cc;
+    --green:     #00e5a0;
+    --red:       #ff4d6a;
+    --yellow:    #ffd166;
+    --purple:    #a78bfa;
+    --text:      #e2e8f0;
+    --text2:     #94a3b8;
+    --text3:     #4a5568;
+    --mono:      'IBM Plex Mono', monospace;
+    --sans:      'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ── TOP NAV ── */
+  .topnav {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 12px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topnav .logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .topnav .logo span { color: var(--text2); }
+  .topnav nav { display: flex; gap: 4px; margin-left: auto; }
+  .topnav nav a {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+    text-decoration: none;
+    padding: 5px 12px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+  }
+  .topnav nav a:hover { color: var(--text); background: var(--surface3); }
+  .topnav nav a.active { color: var(--accent); background: rgba(0,212,255,0.08); }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+  /* ── PAGE HEADER ── */
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    gap: 16px;
+  }
+  .page-header h1 {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 1px;
+  }
+  .page-header p {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 4px;
+    font-family: var(--mono);
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px;
+    margin-bottom: 24px;
+    width: fit-content;
+  }
+  .tab-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--text2);
+    background: none;
+    border: none;
+    padding: 7px 18px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); background: var(--surface3); }
+  .tab-btn.active { color: var(--accent); background: rgba(0,212,255,0.1); }
+
+  /* ── PANEL ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .panel-body { padding: 20px; }
+
+  /* ── CATEGORIES ── */
+  .categories-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .cat-chip {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.5px;
+  }
+  .cat-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .cat-chip.active { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.08); }
+  .cat-chip.add-cat {
+    border-style: dashed;
+    color: var(--text3);
+  }
+  .cat-chip.add-cat:hover { color: var(--text2); border-color: var(--text3); }
+
+  /* ── ADD ASIN FORM ── */
+  .add-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+  .field-group { display: flex; flex-direction: column; gap: 5px; }
+  .field-group label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  input[type="text"], select {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    min-width: 180px;
+  }
+  input[type="text"]:focus, select:focus { border-color: var(--accent); }
+  input[type="text"]::placeholder { color: var(--text3); }
+  select option { background: var(--surface2); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 9px 18px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    font-weight: 600;
+  }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-ghost {
+    background: var(--surface3);
+    color: var(--text2);
+    border: 1px solid var(--border2);
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text3); }
+  .btn-green {
+    background: rgba(0,229,160,0.15);
+    color: var(--green);
+    border: 1px solid rgba(0,229,160,0.3);
+  }
+  .btn-green:hover { background: rgba(0,229,160,0.25); }
+  .btn-sm { padding: 5px 10px; font-size: 10px; }
+  .btn-icon {
+    background: none;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: all 0.15s;
+    font-size: 14px;
+  }
+  .btn-icon:hover { color: var(--red); background: rgba(255,77,106,0.1); }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  thead th {
+    text-align: left;
+    padding: 10px 12px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    font-weight: 500;
+    background: var(--surface2);
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  tbody tr:hover { background: var(--surface3); }
+  tbody tr:last-child { border-bottom: none; }
+  tbody td {
+    padding: 12px 12px;
+    vertical-align: middle;
+    color: var(--text);
+  }
+  .td-asin { color: var(--accent); font-weight: 500; }
+  .td-name { color: var(--text); font-family: var(--sans); font-size: 12px; max-width: 200px; }
+  .td-name .name-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; max-width: 200px; }
+  .price { color: var(--text); font-weight: 500; }
+  .sale-price { color: var(--green); font-weight: 600; }
+  .sale-pct {
+    display: inline-block;
+    background: rgba(0,229,160,0.12);
+    color: var(--green);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 4px;
+  }
+  .coupon-badge {
+    display: inline-block;
+    background: rgba(255,209,102,0.12);
+    color: var(--yellow);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    border: 1px solid rgba(255,209,102,0.25);
+  }
+  .rating-stars { color: var(--yellow); letter-spacing: -1px; }
+  .rating-val { color: var(--text2); margin-left: 4px; }
+  .reviews-count { color: var(--text2); }
+  .variation-pill {
+    display: inline-block;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    margin: 2px;
+    white-space: nowrap;
+  }
+  .variation-pill strong { color: var(--purple); }
+  .no-data { color: var(--text3); }
+  .status-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .dot-green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .dot-red { background: var(--red); }
+  .dot-yellow { background: var(--yellow); }
+  .dot-gray { background: var(--text3); }
+
+  /* ── VARIATIONS MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 28px;
+    width: 90%;
+    max-width: 640px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+  }
+  .modal h2 {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .modal .modal-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    margin-bottom: 20px;
+  }
+  .modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .modal-close:hover { color: var(--text); }
+  .variation-group { margin-bottom: 16px; }
+  .variation-group-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--purple);
+    margin-bottom: 8px;
+  }
+  .variation-asin-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    margin-bottom: 6px;
+    gap: 12px;
+  }
+  .variation-asin-row .vasin { color: var(--accent); font-family: var(--mono); font-size: 12px; }
+  .variation-asin-row .vlabel { color: var(--text2); font-size: 12px; font-family: var(--sans); flex: 1; }
+
+  /* ── AI ANALYSIS PANEL ── */
+  .ai-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 20px;
+  }
+  .ai-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .ai-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--purple);
+    letter-spacing: 1px;
+  }
+  .ai-badge::before {
+    content: '◈';
+    font-size: 14px;
+  }
+  .ai-body { padding: 20px; }
+  .ai-select-prompt {
+    text-align: center;
+    padding: 40px;
+    color: var(--text3);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .ai-loading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px;
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--purple);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .ai-result { display: none; }
+  .ai-result.show { display: block; }
+  .ai-asin-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+  .ai-asin-label span { color: var(--accent); }
+  .sentiment-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .sentiment-label { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 1px; width: 70px; }
+  .sentiment-track {
+    flex: 1;
+    height: 6px;
+    background: var(--surface3);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .sentiment-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+  .fill-positive { background: var(--green); }
+  .fill-neutral { background: var(--yellow); }
+  .fill-negative { background: var(--red); }
+  .sentiment-pct { font-family: var(--mono); font-size: 11px; color: var(--text2); width: 36px; text-align: right; }
+
+  .pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .pros-box, .cons-box {
+    background: var(--surface2);
+    border-radius: 6px;
+    padding: 14px;
+    border: 1px solid var(--border);
+  }
+  .pros-box { border-left: 3px solid var(--green); }
+  .cons-box { border-left: 3px solid var(--red); }
+  .box-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  .pros-box .box-title { color: var(--green); }
+  .cons-box .box-title { color: var(--red); }
+  .box-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .box-list li {
+    font-size: 12px;
+    color: var(--text2);
+    padding-left: 14px;
+    position: relative;
+    line-height: 1.5;
+  }
+  .box-list li::before {
+    position: absolute;
+    left: 0;
+    font-size: 10px;
+  }
+  .pros-box .box-list li::before { content: '+'; color: var(--green); }
+  .cons-box .box-list li::before { content: '−'; color: var(--red); }
+
+  .ai-summary {
+    margin-top: 16px;
+    padding: 14px;
+    background: var(--surface2);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.7;
+    border-left: 3px solid var(--purple);
+  }
+  .ai-summary-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--purple);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  /* ── MY ASINS TAB ── */
+  .my-asin-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    display: grid;
+    grid-template-columns: auto 1fr auto auto auto auto auto;
+    align-items: center;
+    gap: 20px;
+  }
+  .my-asin-card .asin-id {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .my-asin-card .asin-name {
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  /* ── STAT PILLS ── */
+  .stat-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 70px;
+  }
+  .stat-pill .sp-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .stat-pill .sp-val {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .sp-val.green { color: var(--green); }
+  .sp-val.yellow { color: var(--yellow); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text3);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .empty-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.4; }
+
+  /* ── LOADING STATE ── */
+  .fetch-loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(0,212,255,0.05);
+    border: 1px solid rgba(0,212,255,0.15);
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  /* ── NOTIFICATION ── */
+  .notif {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text);
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 300;
+    max-width: 320px;
+  }
+  .notif.show { transform: translateY(0); opacity: 1; }
+  .notif.success { border-left: 3px solid var(--green); }
+  .notif.error { border-left: 3px solid var(--red); }
+  .notif.info { border-left: 3px solid var(--accent); }
+
+  /* ── SETTINGS MODAL ── */
+  .settings-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 16px;
+  }
+  .settings-row label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .settings-row input {
+    width: 100%;
+  }
+  .settings-hint {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 4px;
+  }
+
+  /* ── MISC ── */
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+  .flex { display: flex; }
+  .gap-8 { gap: 8px; }
+  .gap-12 { gap: 12px; }
+  .ml-auto { margin-left: auto; }
+  .text-mono { font-family: var(--mono); }
+  .text-xs { font-size: 10px; }
+  .text-sm { font-size: 12px; }
+  .color-text2 { color: var(--text2); }
+  .color-green { color: var(--green); }
+  .color-red { color: var(--red); }
+  .color-yellow { color: var(--yellow); }
+  .align-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .wrap { flex-wrap: wrap; }
+  .no-wrap { white-space: nowrap; }
+
+  @media (max-width: 768px) {
+    .pros-cons { grid-template-columns: 1fr; }
+    .my-asin-card { grid-template-columns: 1fr 1fr; }
+    .add-form { flex-direction: column; }
+    input[type="text"], select { min-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="topnav">
+  <div class="logo">Ad<span>Scale</span></div>
+  <nav>
+    <a href="/index.html">Dashboard</a>
+    <a href="/campaigns.html">Campaigns</a>
+    <a href="/keywords.html">Keywords</a>
+    <a href="/competitor-tracker.html" class="active">Competitors</a>
+  </nav>
+  <button class="btn btn-ghost btn-sm" onclick="openSettings()" style="margin-left:12px;">⚙ Settings</button>
+</nav>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif"></div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal" style="max-width:480px;">
+    <button class="modal-close" onclick="closeSettings()">×</button>
+    <h2>API SETTINGS</h2>
+    <p class="modal-sub">Configure your API keys for data fetching and AI analysis.</p>
+    <div class="settings-row">
+      <label>Rainforest API Key</label>
+      <input type="text" id="rainforestKey" placeholder="Your Rainforest API key..." />
+      <div class="settings-hint">Get a free key at <strong>rainforestapi.com</strong> — 100 free requests included.</div>
+    </div>
+    <div class="settings-row">
+      <label>Anthropic API Key (Claude)</label>
+      <input type="text" id="anthropicKey" placeholder="sk-ant-..." />
+      <div class="settings-hint">Used for AI review sentiment analysis.</div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+      <button class="btn btn-ghost" onclick="closeSettings()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- VARIATIONS MODAL -->
+<div class="modal-overlay" id="variationsModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeVariations()">×</button>
+    <h2 id="varModalTitle">PRODUCT VARIATIONS</h2>
+    <p class="modal-sub" id="varModalSub"></p>
+    <div id="varModalBody"></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1>COMPETITOR TRACKER</h1>
+      <p>Monitor pricing, ratings, and review sentiment across competitor ASINs.</p>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('competitors')">Competitors</button>
+    <button class="tab-btn" onclick="switchTab('my-asins')">My ASINs</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       COMPETITORS TAB
+  ══════════════════════════════════════════ -->
+  <div id="tab-competitors">
+
+    <!-- CATEGORIES BAR -->
+    <div class="categories-bar" id="categoriesBar">
+      <span class="cat-chip active" data-cat="all" onclick="filterCategory('all')">All</span>
+      <span class="cat-chip add-cat" onclick="addCategory()">+ New Category</span>
+    </div>
+
+    <!-- ADD ASIN PANEL -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Add Competitor ASIN</span>
+      </div>
+      <div class="panel-body">
+        <div class="add-form">
+          <div class="field-group">
+            <label>ASIN</label>
+            <input type="text" id="newAsin" placeholder="B0XXXXXXXX" maxlength="10" />
+          </div>
+          <div class="field-group">
+            <label>Category</label>
+            <select id="newCategory">
+              <option value="Uncategorized">Uncategorized</option>
+            </select>
+          </div>
+          <div class="field-group" style="justify-content:flex-end;">
+            <button class="btn btn-primary" onclick="addCompetitor()" id="addBtn">Fetch &amp; Add</button>
+          </div>
+        </div>
+        <div class="fetch-loading" id="fetchLoading" style="display:none;">
+          <div class="spinner"></div>
+          <span id="fetchLoadingMsg">Fetching product data from Amazon...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPETITORS TABLE -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Tracked Competitors</span>
+        <span class="text-mono text-xs color-text2" id="competitorCount">0 ASINs</span>
+      </div>
+      <div class="panel-body" style="padding:0;">
+        <div class="table-wrap">
+          <table id="competitorTable">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>ASIN</th>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Sale / Coupon</th>
+                <th>Rating</th>
+                <th>Reviews</th>
+                <th>Variations</th>
+                <th>Category</th>
+                <th>AI Analysis</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="competitorTbody">
+              <tr>
+                <td colspan="11">
+                  <div class="empty-state">
+                    <div class="empty-icon">◈</div>
+                    <div>No competitors tracked yet.</div>
+                    <div style="margin-top:6px;color:#334155;font-size:11px;">Add an ASIN above to start tracking.</div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI ANALYSIS PANEL -->
+    <div class="ai-panel">
+      <div class="ai-panel-header">
+        <div class="ai-badge">AI REVIEW ANALYSIS</div>
+        <span class="text-mono text-xs color-text2">Powered by Claude</span>
+      </div>
+      <div class="ai-body" id="aiBody">
+        <div class="ai-select-prompt">Select "Analyze" on any competitor above to run a review sentiment analysis.</div>
+      </div>
+    </div>
+
+  </div><!-- /tab-competitors -->
+
+  <!-- ══════════════════════════════════════════
+       MY ASINS TAB
+  ══════════════════════════════════════════ -->
+  <div id="tab-my-asins" style="display:none;">
+
+    <!-- ADD MY ASIN -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Add My ASIN</span>
+      </div>
+      <div class="panel-body">
+        <div class="add-form">
+          <div class="field-group">
+            <label>ASIN</label>
+            <input type="text" id="myNewAsin" placeholder="B0XXXXXXXX" maxlength="10" />
+          </div>
+          <div class="field-group" style="justify-content:flex-end;">
+            <button class="btn btn-primary" onclick="addMyAsin()" id="addMyBtn">Fetch &amp; Add</button>
+          </div>
+        </div>
+        <div class="fetch-loading" id="myFetchLoading" style="display:none;">
+          <div class="spinner"></div>
+          <span>Fetching your product data from Amazon...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY ASINS LIST -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">My Products</span>
+        <span class="text-mono text-xs color-text2" id="myAsinCount">0 ASINs</span>
+      </div>
+      <div class="panel-body" id="myAsinList">
+        <div class="empty-state">
+          <div class="empty-icon">◈</div>
+          <div>No products added yet.</div>
+          <div style="margin-top:6px;color:#334155;font-size:11px;">Add your ASINs above to track your own listings.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /tab-my-asins -->
+
+</div><!-- /container -->
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+let state = {
+  competitors: [],
+  myAsins: [],
+  categories: ['Uncategorized'],
+  activeCategory: 'all',
+  settings: {
+    rainforestKey: '',
+    anthropicKey: ''
+  }
+};
+
+// ── INIT ────────────────────────────────────────────────────────────────────
+function init() {
+  const saved = localStorage.getItem('adscale_tracker');
+  if (saved) {
+    try { state = JSON.parse(saved); } catch(e) {}
+  }
+  renderCategories();
+  renderCompetitors();
+  renderMyAsins();
+  document.getElementById('rainforestKey').value = state.settings.rainforestKey || '';
+  document.getElementById('anthropicKey').value = state.settings.anthropicKey || '';
+}
+
+function save() {
+  localStorage.setItem('adscale_tracker', JSON.stringify(state));
+}
+
+// ── TABS ────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.remove('active'));
+  document.querySelectorAll('.tab-btn')[tab === 'competitors' ? 0 : 1].classList.add('active');
+  document.getElementById('tab-competitors').style.display = tab === 'competitors' ? 'block' : 'none';
+  document.getElementById('tab-my-asins').style.display = tab === 'my-asins' ? 'block' : 'none';
+}
+
+// ── SETTINGS ────────────────────────────────────────────────────────────────
+function openSettings() {
+  document.getElementById('rainforestKey').value = state.settings.rainforestKey || '';
+  document.getElementById('anthropicKey').value = state.settings.anthropicKey || '';
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeSettings() { document.getElementById('settingsModal').classList.remove('open'); }
+function saveSettings() {
+  state.settings.rainforestKey = document.getElementById('rainforestKey').value.trim();
+  state.settings.anthropicKey = document.getElementById('anthropicKey').value.trim();
+  save();
+  closeSettings();
+  notify('Settings saved.', 'success');
+}
+
+// ── CATEGORIES ──────────────────────────────────────────────────────────────
+function addCategory() {
+  const name = prompt('New category name (e.g. Tables, Benches):');
+  if (!name || !name.trim()) return;
+  const cat = name.trim();
+  if (state.categories.includes(cat)) { notify('Category already exists.', 'error'); return; }
+  state.categories.push(cat);
+  save();
+  renderCategories();
+  notify(`Category "${cat}" created.`, 'success');
+}
+
+function filterCategory(cat) {
+  state.activeCategory = cat;
+  renderCategories();
+  renderCompetitors();
+}
+
+function renderCategories() {
+  const bar = document.getElementById('categoriesBar');
+  const select = document.getElementById('newCategory');
+  // bar
+  bar.innerHTML = `<span class="cat-chip ${state.activeCategory === 'all' ? 'active' : ''}" data-cat="all" onclick="filterCategory('all')">All</span>`;
+  state.categories.forEach(cat => {
+    bar.innerHTML += `<span class="cat-chip ${state.activeCategory === cat ? 'active' : ''}" onclick="filterCategory('${esc(cat)}')">${esc(cat)}</span>`;
+  });
+  bar.innerHTML += `<span class="cat-chip add-cat" onclick="addCategory()">+ New Category</span>`;
+  // select
+  select.innerHTML = state.categories.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+}
+
+// ── RAINFOREST API ──────────────────────────────────────────────────────────
+async function fetchAmazonProduct(asin) {
+  const key = state.settings.rainforestKey;
+  if (!key) throw new Error('No Rainforest API key set. Go to Settings.');
+  const url = `https://api.rainforestapi.com/request?api_key=${encodeURIComponent(key)}&type=product&asin=${encodeURIComponent(asin)}&amazon_domain=amazon.com`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`API error: ${resp.status}`);
+  const data = await resp.json();
+  if (data.request_info && data.request_info.success === false) throw new Error(data.request_info.message || 'API request failed.');
+  return parseRainforestProduct(data, asin);
+}
+
+function parseRainforestProduct(data, asin) {
+  const p = data.product || {};
+  const price = p.buybox_winner?.price?.value || p.price?.value || null;
+  const rrpVal = p.buybox_winner?.rrp?.value || null;
+  let salePrice = null, salePct = null;
+  if (price && rrpVal && rrpVal > price) {
+    salePrice = price;
+    salePct = Math.round(((rrpVal - price) / rrpVal) * 100);
+  }
+  const coupon = p.coupon_badge_label || null;
+
+  // Variations
+  const varDimensions = {};
+  if (p.variants && p.variants.length > 0) {
+    p.variants.forEach(v => {
+      if (v.dimensions) {
+        v.dimensions.forEach(d => {
+          if (!varDimensions[d.name]) varDimensions[d.name] = [];
+          const exists = varDimensions[d.name].find(x => x.value === d.value);
+          if (!exists) varDimensions[d.name].push({ value: d.value, asin: v.asin });
+        });
+      }
+    });
+  }
+
+  return {
+    asin,
+    title: p.title || asin,
+    price: price ? formatPrice(price) : null,
+    rawPrice: price,
+    salePrice: salePrice ? formatPrice(salePrice) : null,
+    originalPrice: rrpVal ? formatPrice(rrpVal) : null,
+    salePct,
+    coupon,
+    rating: p.rating || null,
+    ratingsTotal: p.ratings_total || null,
+    variations: varDimensions,
+    variantsRaw: p.variants || [],
+    category: null,
+    addedAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString()
+  };
+}
+
+function formatPrice(val) {
+  return '$' + parseFloat(val).toFixed(2);
+}
+
+// ── ADD COMPETITOR ──────────────────────────────────────────────────────────
+async function addCompetitor() {
+  const asin = document.getElementById('newAsin').value.trim().toUpperCase();
+  const category = document.getElementById('newCategory').value;
+  if (!asin || asin.length < 10) { notify('Enter a valid 10-character ASIN.', 'error'); return; }
+  if (!state.settings.rainforestKey) { notify('Set your Rainforest API key in Settings first.', 'error'); openSettings(); return; }
+  if (state.competitors.find(c => c.asin === asin)) { notify('ASIN already tracked.', 'error'); return; }
+
+  const btn = document.getElementById('addBtn');
+  const loading = document.getElementById('fetchLoading');
+  btn.disabled = true;
+  loading.style.display = 'flex';
+  document.getElementById('fetchLoadingMsg').textContent = `Fetching ${asin} from Amazon...`;
+
+  try {
+    const product = await fetchAmazonProduct(asin);
+    product.category = category;
+    state.competitors.push(product);
+    save();
+    renderCompetitors();
+    document.getElementById('newAsin').value = '';
+    notify(`${asin} added successfully.`, 'success');
+  } catch(e) {
+    notify('Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    loading.style.display = 'none';
+  }
+}
+
+// ── REMOVE COMPETITOR ───────────────────────────────────────────────────────
+function removeCompetitor(asin) {
+  if (!confirm(`Remove ${asin} from tracking?`)) return;
+  state.competitors = state.competitors.filter(c => c.asin !== asin);
+  save();
+  renderCompetitors();
+  notify(`${asin} removed.`, 'info');
+}
+
+// ── REFRESH COMPETITOR ──────────────────────────────────────────────────────
+async function refreshCompetitor(asin) {
+  if (!state.settings.rainforestKey) { notify('Set your Rainforest API key in Settings first.', 'error'); return; }
+  const idx = state.competitors.findIndex(c => c.asin === asin);
+  if (idx === -1) return;
+  notify(`Refreshing ${asin}...`, 'info');
+  try {
+    const product = await fetchAmazonProduct(asin);
+    product.category = state.competitors[idx].category;
+    state.competitors[idx] = product;
+    save();
+    renderCompetitors();
+    notify(`${asin} updated.`, 'success');
+  } catch(e) {
+    notify('Refresh failed: ' + e.message, 'error');
+  }
+}
+
+// ── RENDER COMPETITORS ──────────────────────────────────────────────────────
+function renderCompetitors() {
+  const tbody = document.getElementById('competitorTbody');
+  const filtered = state.activeCategory === 'all'
+    ? state.competitors
+    : state.competitors.filter(c => c.category === state.activeCategory);
+
+  document.getElementById('competitorCount').textContent = filtered.length + ' ASINs';
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">◈</div><div>No competitors tracked yet.</div><div style="margin-top:6px;color:#334155;font-size:11px;">Add an ASIN above to start tracking.</div></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(c => {
+    // Price column
+    const priceCell = c.price
+      ? `<span class="price">${c.price}</span>`
+      : `<span class="no-data">—</span>`;
+
+    // Sale / Coupon
+    let saleCell = '';
+    if (c.salePrice) {
+      saleCell += `<span class="sale-price">${c.salePrice}</span><span class="sale-pct">-${c.salePct}%</span>`;
+      if (c.originalPrice) saleCell += `<br><span style="color:var(--text3);font-size:10px;text-decoration:line-through;">${c.originalPrice}</span>`;
+    }
+    if (c.coupon) {
+      saleCell += `${saleCell ? '<br>' : ''}<span class="coupon-badge">${esc(c.coupon)}</span>`;
+    }
+    if (!saleCell) saleCell = `<span class="no-data">—</span>`;
+
+    // Rating
+    const ratingCell = c.rating
+      ? `<span class="rating-stars">${starsHTML(c.rating)}</span><span class="rating-val">${c.rating}</span>`
+      : `<span class="no-data">—</span>`;
+
+    // Reviews
+    const reviewsCell = c.ratingsTotal
+      ? `<span class="reviews-count">${c.ratingsTotal.toLocaleString()}</span>`
+      : `<span class="no-data">—</span>`;
+
+    // Variations
+    let varCell = '';
+    const varKeys = Object.keys(c.variations || {});
+    if (varKeys.length > 0) {
+      varCell = varKeys.map(k => {
+        const count = c.variations[k].length;
+        return `<span class="variation-pill"><strong>${esc(k)}</strong>: ${count}</span>`;
+      }).join('');
+      varCell += `<br><button class="btn btn-ghost btn-sm" style="margin-top:4px;" onclick="openVariations('${esc(c.asin)}')">View ASINs</button>`;
+    } else {
+      varCell = `<span class="no-data">—</span>`;
+    }
+
+    return `
+    <tr>
+      <td><span class="status-dot dot-green"></span></td>
+      <td class="td-asin">${esc(c.asin)}</td>
+      <td class="td-name"><span class="name-text" title="${esc(c.title)}">${esc(c.title)}</span></td>
+      <td>${priceCell}</td>
+      <td>${saleCell}</td>
+      <td>${ratingCell}</td>
+      <td>${reviewsCell}</td>
+      <td>${varCell}</td>
+      <td><span class="variation-pill">${esc(c.category || 'Uncategorized')}</span></td>
+      <td><button class="btn btn-ghost btn-sm" style="color:var(--purple);border-color:rgba(167,139,250,0.3);" onclick="runAiAnalysis('${esc(c.asin)}')">◈ Analyze</button></td>
+      <td>
+        <div class="flex gap-8 align-center">
+          <button class="btn-icon" title="Refresh" onclick="refreshCompetitor('${esc(c.asin)}')">↻</button>
+          <button class="btn-icon" title="Remove" onclick="removeCompetitor('${esc(c.asin)}')">✕</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── VARIATIONS MODAL ────────────────────────────────────────────────────────
+function openVariations(asin) {
+  const c = state.competitors.find(x => x.asin === asin) || state.myAsins.find(x => x.asin === asin);
+  if (!c) return;
+  document.getElementById('varModalTitle').textContent = 'VARIATIONS — ' + asin;
+  document.getElementById('varModalSub').textContent = c.title;
+  const body = document.getElementById('varModalBody');
+  const varKeys = Object.keys(c.variations || {});
+  if (varKeys.length === 0) {
+    body.innerHTML = '<p style="color:var(--text3);font-family:var(--mono);font-size:12px;">No variations found for this product.</p>';
+  } else {
+    body.innerHTML = varKeys.map(k => {
+      const vals = c.variations[k];
+      return `
+      <div class="variation-group">
+        <div class="variation-group-title">${esc(k)} (${vals.length})</div>
+        ${vals.map(v => `
+          <div class="variation-asin-row">
+            <span class="vasin">${esc(v.asin || '—')}</span>
+            <span class="vlabel">${esc(v.value)}</span>
+            ${v.asin && !state.competitors.find(cc => cc.asin === v.asin)
+              ? `<button class="btn btn-green btn-sm" onclick="addVariantAsCompetitor('${esc(v.asin)}','${esc(c.category || 'Uncategorized')}')">+ Track</button>`
+              : v.asin ? `<span class="text-mono text-xs color-text2">Tracked</span>` : ''}
+          </div>`).join('')}
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('variationsModal').classList.add('open');
+}
+
+function closeVariations() { document.getElementById('variationsModal').classList.remove('open'); }
+
+async function addVariantAsCompetitor(asin, category) {
+  if (state.competitors.find(c => c.asin === asin)) { notify('Already tracked.', 'error'); return; }
+  if (!state.settings.rainforestKey) { notify('Set your Rainforest API key in Settings first.', 'error'); return; }
+  notify(`Fetching ${asin}...`, 'info');
+  try {
+    const product = await fetchAmazonProduct(asin);
+    product.category = category;
+    state.competitors.push(product);
+    save();
+    renderCompetitors();
+    closeVariations();
+    notify(`${asin} added to tracking.`, 'success');
+  } catch(e) {
+    notify('Error: ' + e.message, 'error');
+  }
+}
+
+// ── AI ANALYSIS ─────────────────────────────────────────────────────────────
+async function runAiAnalysis(asin) {
+  const c = state.competitors.find(x => x.asin === asin);
+  if (!c) return;
+  const apiKey = state.settings.anthropicKey;
+  if (!apiKey) { notify('Set your Anthropic API key in Settings first.', 'error'); openSettings(); return; }
+
+  const aiBody = document.getElementById('aiBody');
+  aiBody.innerHTML = `<div class="ai-loading"><div class="spinner"></div>Analyzing reviews for ${asin} — this may take a moment...</div>`;
+
+  const prompt = `You are an Amazon product review analyst. Analyze the customer reviews and market positioning for the Amazon product with ASIN: ${asin}. The product title is: "${c.title}". It has ${c.ratingsTotal || 'an unknown number of'} ratings and a ${c.rating || 'unknown'} star average rating.
+
+Based on your knowledge of this product and similar products on Amazon, provide a structured analysis in this exact JSON format only (no other text, no markdown):
+{
+  "sentimentPositive": 75,
+  "sentimentNeutral": 15,
+  "sentimentNegative": 10,
+  "pros": ["Pro point 1", "Pro point 2", "Pro point 3", "Pro point 4"],
+  "cons": ["Con point 1", "Con point 2", "Con point 3"],
+  "summary": "2-3 sentence summary of overall customer sentiment and key insights for a competitor analysis."
+}
+Make the numbers add up to 100. Be specific and realistic.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 800,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      throw new Error(err.error?.message || `API error ${resp.status}`);
+    }
+
+    const data = await resp.json();
+    const text = data.content.map(i => i.text || '').join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    renderAiResult(asin, c.title, parsed);
+  } catch(e) {
+    aiBody.innerHTML = `<div style="color:var(--red);font-family:var(--mono);font-size:12px;padding:20px;">AI analysis failed: ${esc(e.message)}</div>`;
+  }
+}
+
+function renderAiResult(asin, title, d) {
+  const aiBody = document.getElementById('aiBody');
+  aiBody.innerHTML = `
+    <div class="ai-asin-label">Analysis for <span>${esc(asin)}</span> — ${esc(title.substring(0, 80))}${title.length > 80 ? '...' : ''}</div>
+    <div class="sentiment-bar">
+      <span class="sentiment-label">Positive</span>
+      <div class="sentiment-track"><div class="sentiment-fill fill-positive" style="width:${d.sentimentPositive}%"></div></div>
+      <span class="sentiment-pct">${d.sentimentPositive}%</span>
+    </div>
+    <div class="sentiment-bar">
+      <span class="sentiment-label">Neutral</span>
+      <div class="sentiment-track"><div class="sentiment-fill fill-neutral" style="width:${d.sentimentNeutral}%"></div></div>
+      <span class="sentiment-pct">${d.sentimentNeutral}%</span>
+    </div>
+    <div class="sentiment-bar">
+      <span class="sentiment-label">Negative</span>
+      <div class="sentiment-track"><div class="sentiment-fill fill-negative" style="width:${d.sentimentNegative}%"></div></div>
+      <span class="sentiment-pct">${d.sentimentNegative}%</span>
+    </div>
+    <div class="pros-cons">
+      <div class="pros-box">
+        <div class="box-title">Pros</div>
+        <ul class="box-list">${(d.pros || []).map(p => `<li>${esc(p)}</li>`).join('')}</ul>
+      </div>
+      <div class="cons-box">
+        <div class="box-title">Cons</div>
+        <ul class="box-list">${(d.cons || []).map(c => `<li>${esc(c)}</li>`).join('')}</ul>
+      </div>
+    </div>
+    <div class="ai-summary">
+      <div class="ai-summary-title">Summary</div>
+      ${esc(d.summary)}
+    </div>`;
+}
+
+// ── MY ASINS ────────────────────────────────────────────────────────────────
+async function addMyAsin() {
+  const asin = document.getElementById('myNewAsin').value.trim().toUpperCase();
+  if (!asin || asin.length < 10) { notify('Enter a valid 10-character ASIN.', 'error'); return; }
+  if (!state.settings.rainforestKey) { notify('Set your Rainforest API key in Settings first.', 'error'); openSettings(); return; }
+  if (state.myAsins.find(c => c.asin === asin)) { notify('ASIN already added.', 'error'); return; }
+
+  const btn = document.getElementById('addMyBtn');
+  const loading = document.getElementById('myFetchLoading');
+  btn.disabled = true;
+  loading.style.display = 'flex';
+
+  try {
+    const product = await fetchAmazonProduct(asin);
+    state.myAsins.push(product);
+    save();
+    renderMyAsins();
+    document.getElementById('myNewAsin').value = '';
+    notify(`${asin} added to My ASINs.`, 'success');
+  } catch(e) {
+    notify('Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    loading.style.display = 'none';
+  }
+}
+
+function removeMyAsin(asin) {
+  if (!confirm(`Remove ${asin}?`)) return;
+  state.myAsins = state.myAsins.filter(c => c.asin !== asin);
+  save();
+  renderMyAsins();
+}
+
+async function refreshMyAsin(asin) {
+  if (!state.settings.rainforestKey) { notify('Set your Rainforest API key in Settings first.', 'error'); return; }
+  const idx = state.myAsins.findIndex(c => c.asin === asin);
+  if (idx === -1) return;
+  notify(`Refreshing ${asin}...`, 'info');
+  try {
+    const product = await fetchAmazonProduct(asin);
+    state.myAsins[idx] = product;
+    save();
+    renderMyAsins();
+    notify(`${asin} updated.`, 'success');
+  } catch(e) {
+    notify('Refresh failed: ' + e.message, 'error');
+  }
+}
+
+function renderMyAsins() {
+  const list = document.getElementById('myAsinList');
+  document.getElementById('myAsinCount').textContent = state.myAsins.length + ' ASINs';
+  if (state.myAsins.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">◈</div><div>No products added yet.</div><div style="margin-top:6px;color:#334155;font-size:11px;">Add your ASINs above to track your own listings.</div></div>`;
+    return;
+  }
+  list.innerHTML = state.myAsins.map(c => {
+    let priceDisplay = c.price || '—';
+    let saleLine = '';
+    if (c.salePrice) {
+      saleLine = `<div class="sp-val green">${c.salePrice} <span style="font-size:10px;opacity:0.7;">-${c.salePct}%</span></div>`;
+    }
+    const couponLine = c.coupon ? `<span class="coupon-badge">${esc(c.coupon)}</span>` : '';
+    return `
+    <div class="my-asin-card">
+      <div>
+        <div class="asin-id">${esc(c.asin)}</div>
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px;">${esc(c.category || '')}</div>
+      </div>
+      <div class="asin-name">${esc(c.title.substring(0,90))}${c.title.length > 90 ? '...' : ''}</div>
+      <div class="stat-pill">
+        <span class="sp-label">Price</span>
+        <span class="sp-val">${c.price || '—'}</span>
+      </div>
+      <div class="stat-pill">
+        <span class="sp-label">Sale</span>
+        ${c.salePrice ? `<span class="sp-val green">${c.salePrice}</span>` : `<span class="sp-val" style="color:var(--text3);">—</span>`}
+      </div>
+      <div class="stat-pill">
+        <span class="sp-label">Discount</span>
+        ${c.salePct ? `<span class="sp-val yellow">-${c.salePct}%</span>` : `<span class="sp-val" style="color:var(--text3);">—</span>`}
+      </div>
+      <div class="stat-pill">
+        <span class="sp-label">Coupon</span>
+        ${c.coupon ? `<span class="coupon-badge">${esc(c.coupon)}</span>` : `<span class="sp-val" style="color:var(--text3);">—</span>`}
+      </div>
+      <div class="flex gap-8 align-center">
+        <button class="btn-icon" title="Refresh" onclick="refreshMyAsin('${esc(c.asin)}')">↻</button>
+        <button class="btn-icon" title="Remove" onclick="removeMyAsin('${esc(c.asin)}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+function starsHTML(rating) {
+  const full = Math.floor(rating);
+  const half = rating % 1 >= 0.5;
+  let s = '★'.repeat(full);
+  if (half) s += '½';
+  return s;
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+let notifTimer;
+function notify(msg, type = 'info') {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.className = `notif ${type} show`;
+  clearTimeout(notifTimer);
+  notifTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// ── KICK OFF ─────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
