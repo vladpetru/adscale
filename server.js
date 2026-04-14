@@ -3,17 +3,8 @@
 // ================================================================
 // AdScale — Amazon PPC Management Backend
 // ================================================================
-// Security features:
-//   - Password login with session management
-//   - Rate limiting on login (blocks brute force)
-//   - IP allowlist (optional)
-//   - Helmet (sets secure HTTP headers)
-//   - Sessions expire after 24 hours
-//   - All secrets in environment variables
-//   - HTTPS enforced on Railway automatically
-// Persistence:
-//   - PostgreSQL (Railway) stores all algorithm settings
-//   - Settings survive server restarts and are shared across devices
+// Now connects via MarketplaceAdPros MCP API instead of direct Amazon API.
+// All campaign data flows through MAP using your Bearer token.
 // ================================================================
 
 require('dotenv').config();
@@ -37,9 +28,17 @@ const REQUIRED_VARS = ['APP_PASSWORD', 'SESSION_SECRET'];
 const missing = REQUIRED_VARS.filter(v => !process.env[v]);
 if (missing.length > 0) {
   console.error('ERROR: Missing required environment variables:', missing.join(', '));
-  console.error('Copy .env.example to .env and fill in your values.');
   process.exit(1);
 }
+
+// ----------------------------------------------------------------
+// MarketplaceAdPros config
+// ----------------------------------------------------------------
+const MAP_TOKEN          = process.env.MAP_BEARER_TOKEN || '';
+const MAP_MCP_URL        = 'https://app.marketplaceadpros.com/mcp';
+const MAP_INTEGRATION_ID = '512ee096-b7f1-4515-896d-d165d526caa2';
+const MAP_ACCOUNT_ID     = '47e6da51-bf41-42ae-9da2-edbfbc38f771';  // UNIEVO US
+const MAP_BRAND_ID       = '4a6fa058-4ca9-438b-9a04-edad5aec8a87';
 
 // ----------------------------------------------------------------
 // PostgreSQL database setup
@@ -49,18 +48,16 @@ let db = null;
 async function initDatabase() {
   const dbUrl = process.env.DATABASE_URL;
   if (!dbUrl) {
-    console.warn('WARNING: DATABASE_URL not set. Settings will not persist across restarts.');
-    console.warn('Add a PostgreSQL database on Railway to enable persistent settings.');
+    console.warn('WARNING: DATABASE_URL not set. Settings will not persist.');
     return;
   }
 
   try {
     db = new Pool({
       connectionString: dbUrl,
-      ssl: { rejectUnauthorized: false },
+      ssl: dbUrl.includes('railway.internal') ? false : { rejectUnauthorized: false },
     });
 
-    // Create settings table if it doesn't exist
     await db.query(`
       CREATE TABLE IF NOT EXISTS settings (
         key   TEXT PRIMARY KEY,
@@ -69,7 +66,6 @@ async function initDatabase() {
       );
     `);
 
-    // Create algorithm_configs table
     await db.query(`
       CREATE TABLE IF NOT EXISTS algorithm_configs (
         algorithm_id  TEXT PRIMARY KEY,
@@ -85,25 +81,6 @@ async function initDatabase() {
     db = null;
   }
 }
-
-// ----------------------------------------------------------------
-// Amazon Ads API config
-// ----------------------------------------------------------------
-const AMAZON = {
-  clientId:     process.env.AMAZON_CLIENT_ID     || '',
-  clientSecret: process.env.AMAZON_CLIENT_SECRET || '',
-  region:       process.env.AMAZON_REGION        || 'NA',
-  redirectUri:  process.env.AMAZON_REDIRECT_URI  || `http://localhost:${PORT}/auth/callback`,
-};
-
-const REGION_ENDPOINTS = {
-  NA: 'https://advertising-api.amazon.com',
-  EU: 'https://advertising-api-eu.amazon.com',
-  FE: 'https://advertising-api-fe.amazon.com',
-};
-const AMAZON_TOKEN_URL = 'https://api.amazon.com/auth/o2/token';
-const AMAZON_AUTH_URL  = 'https://www.amazon.com/ap/oa';
-const API_BASE         = REGION_ENDPOINTS[AMAZON.region] || REGION_ENDPOINTS.NA;
 
 // ----------------------------------------------------------------
 // Security: IP allowlist middleware (optional)
@@ -177,64 +154,127 @@ function requireAuth(req, res, next) {
   return res.status(401).json({ error: 'Not authenticated. Please log in.' });
 }
 
-function requireAmazon(req, res, next) {
-  if (req.session && req.session.amazonTokens) return next();
-  return res.status(401).json({ error: 'Amazon account not connected.' });
-}
-
 // ----------------------------------------------------------------
-// Helper: Refresh Amazon access token if expired
+// MAP MCP Helper: call a tool on the MAP MCP server
 // ----------------------------------------------------------------
-async function getValidToken(session) {
-  const tokens = session.amazonTokens;
-  if (!tokens) throw new Error('No Amazon tokens found.');
+let mcpSessionId = null;
 
-  const now = Date.now();
-  if (tokens.expiresAt && now < tokens.expiresAt - 5 * 60 * 1000) {
-    return tokens.accessToken;
+async function mapCallTool(toolName, args = {}) {
+  if (!MAP_TOKEN) throw new Error('MAP_BEARER_TOKEN not configured.');
+
+  const body = {
+    jsonrpc: '2.0',
+    id: Date.now(),
+    method: 'tools/call',
+    params: {
+      name: toolName,
+      arguments: args,
+    },
+  };
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${MAP_TOKEN}`,
+    'Accept': 'application/json, text/event-stream',
+  };
+
+  if (mcpSessionId) {
+    headers['Mcp-Session-Id'] = mcpSessionId;
   }
 
-  const response = await axios.post(AMAZON_TOKEN_URL, new URLSearchParams({
-    grant_type:    'refresh_token',
-    refresh_token: tokens.refreshToken,
-    client_id:     AMAZON.clientId,
-    client_secret: AMAZON.clientSecret,
-  }), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+  try {
+    const response = await axios.post(MAP_MCP_URL, body, { headers, timeout: 30000 });
 
-  session.amazonTokens = {
-    accessToken:  response.data.access_token,
-    refreshToken: tokens.refreshToken,
-    expiresAt:    Date.now() + (response.data.expires_in * 1000),
-  };
-  return session.amazonTokens.accessToken;
+    // Capture session ID from response headers
+    const sid = response.headers['mcp-session-id'];
+    if (sid) mcpSessionId = sid;
+
+    // Handle MCP response format
+    const data = response.data;
+
+    // If it's a standard JSON-RPC response
+    if (data && data.result) {
+      // MCP tools/call returns { content: [...] }
+      const content = data.result.content || [];
+      const textParts = content
+        .filter(c => c.type === 'text')
+        .map(c => c.text);
+      const combined = textParts.join('\n');
+
+      // Try to parse as JSON
+      try {
+        return JSON.parse(combined);
+      } catch {
+        return combined;
+      }
+    }
+
+    if (data && data.error) {
+      throw new Error(data.error.message || 'MCP error');
+    }
+
+    return data;
+  } catch (err) {
+    // If session expired, reset and retry once
+    if (err.response && err.response.status === 404 && mcpSessionId) {
+      mcpSessionId = null;
+      return mapCallTool(toolName, args);
+    }
+    throw new Error(`MAP API error: ${err.message}`);
+  }
+}
+
+// Initialize MCP session on startup
+async function initMcpSession() {
+  if (!MAP_TOKEN) {
+    console.warn('  MAP_BEARER_TOKEN not set. Dashboard will show sample data.');
+    return;
+  }
+
+  try {
+    const body = {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'initialize',
+      params: {
+        protocolVersion: '2025-03-26',
+        capabilities: {},
+        clientInfo: { name: 'AdScale', version: '1.0.0' },
+      },
+    };
+
+    const response = await axios.post(MAP_MCP_URL, body, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${MAP_TOKEN}`,
+        'Accept': 'application/json, text/event-stream',
+      },
+      timeout: 15000,
+    });
+
+    const sid = response.headers['mcp-session-id'];
+    if (sid) mcpSessionId = sid;
+
+    console.log('  MAP MCP session initialized.');
+  } catch (err) {
+    console.warn('  MAP MCP init failed:', err.message);
+    console.warn('  Dashboard will fall back to sample data.');
+  }
 }
 
 // ----------------------------------------------------------------
-// Helper: Amazon API request
+// Helper: default MAP args (always UNIEVO US)
 // ----------------------------------------------------------------
-async function amazonRequest(session, method, endpoint, data = null, params = null) {
-  const token     = await getValidToken(session);
-  const profileId = session.amazonProfileId;
-
-  const config = {
-    method,
-    url: `${API_BASE}${endpoint}`,
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Amazon-Advertising-API-ClientId': AMAZON.clientId,
-      'Content-Type': 'application/json',
-      ...(profileId ? { 'Amazon-Advertising-API-Scope': profileId } : {}),
-    },
-    ...(params ? { params } : {}),
-    ...(data   ? { data }   : {}),
+function mapDefaults() {
+  return {
+    integration_id: MAP_INTEGRATION_ID,
+    account_id:     MAP_ACCOUNT_ID,
+    brand_id:       MAP_BRAND_ID,
   };
-
-  const response = await axios(config);
-  return response.data;
 }
 
 // ================================================================
-// ROUTES — Auth
+// ROUTES - Auth
 // ================================================================
 
 app.post('/auth/login', loginLimiter, (req, res) => {
@@ -255,62 +295,18 @@ app.post('/auth/logout', (req, res) => {
 app.get('/auth/status', requireAuth, (req, res) => {
   res.json({
     loggedIn:        true,
-    amazonConnected: !!req.session.amazonTokens,
-    profileId:       req.session.amazonProfileId   || null,
-    profileName:     req.session.amazonProfileName || null,
+    amazonConnected: !!MAP_TOKEN,
+    profileId:       MAP_ACCOUNT_ID,
+    profileName:     'UNIEVO US',
     dbConnected:     !!db,
+    mapConnected:    !!MAP_TOKEN,
   });
 });
 
-app.get('/auth/amazon', requireAuth, (req, res) => {
-  if (!AMAZON.clientId) {
-    return res.status(400).json({ error: 'Amazon credentials not configured.' });
-  }
-  const state = Math.random().toString(36).substring(2, 15);
-  req.session.oauthState = state;
-
-  const params = new URLSearchParams({
-    client_id:     AMAZON.clientId,
-    scope:         'advertising::campaign_management',
-    response_type: 'code',
-    redirect_uri:  AMAZON.redirectUri,
-    state,
-  });
-  res.redirect(`${AMAZON_AUTH_URL}?${params.toString()}`);
-});
-
-app.get('/auth/callback', requireAuth, async (req, res) => {
-  const { code, state, error } = req.query;
-  if (error) return res.redirect('/?error=amazon_denied');
-  if (!state || state !== req.session.oauthState) return res.redirect('/?error=invalid_state');
-
-  try {
-    const tokenResponse = await axios.post(AMAZON_TOKEN_URL, new URLSearchParams({
-      grant_type:    'authorization_code',
-      code,
-      redirect_uri:  AMAZON.redirectUri,
-      client_id:     AMAZON.clientId,
-      client_secret: AMAZON.clientSecret,
-    }), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
-
-    req.session.amazonTokens = {
-      accessToken:  tokenResponse.data.access_token,
-      refreshToken: tokenResponse.data.refresh_token,
-      expiresAt:    Date.now() + (tokenResponse.data.expires_in * 1000),
-    };
-    req.session.oauthState = null;
-    res.redirect('/?amazon=connected');
-  } catch (err) {
-    console.error('OAuth error:', err.response?.data || err.message);
-    res.redirect('/?error=oauth_failed');
-  }
-});
-
 // ================================================================
-// ROUTES — Settings (persistent, stored in PostgreSQL)
+// ROUTES - Settings (persistent, stored in PostgreSQL)
 // ================================================================
 
-// GET /api/settings — load all saved settings
 app.get('/api/settings', requireAuth, async (req, res) => {
   if (!db) return res.json({ algorithms: {}, general: {} });
 
@@ -325,7 +321,6 @@ app.get('/api/settings', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/settings — save a setting by key
 app.post('/api/settings', requireAuth, async (req, res) => {
   const { key, value } = req.body;
   if (!key) return res.status(400).json({ error: 'key required.' });
@@ -346,7 +341,10 @@ app.post('/api/settings', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/algorithms — load all algorithm configs
+// ================================================================
+// ROUTES - Algorithm configs
+// ================================================================
+
 app.get('/api/algorithms', requireAuth, async (req, res) => {
   if (!db) return res.json([]);
 
@@ -361,7 +359,6 @@ app.get('/api/algorithms', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/algorithms/:id — save one algorithm config
 app.post('/api/algorithms/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { enabled, config } = req.body;
@@ -383,155 +380,279 @@ app.post('/api/algorithms/:id', requireAuth, async (req, res) => {
 });
 
 // ================================================================
-// ROUTES — Amazon Ads API
+// ROUTES - Amazon Ads via MAP MCP
 // ================================================================
 
-app.get('/api/profiles', requireAuth, requireAmazon, apiLimiter, async (req, res) => {
+// GET /api/portfolios
+app.get('/api/portfolios', requireAuth, apiLimiter, async (req, res) => {
   try {
-    res.json(await amazonRequest(req.session, 'GET', '/v2/profiles'));
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/profiles/select', requireAuth, requireAmazon, async (req, res) => {
-  const { profileId, profileName } = req.body;
-  if (!profileId) return res.status(400).json({ error: 'profileId required.' });
-  req.session.amazonProfileId   = profileId;
-  req.session.amazonProfileName = profileName || '';
-  res.json({ success: true, profileId, profileName });
-});
-
-app.get('/api/portfolios', requireAuth, requireAmazon, apiLimiter, async (req, res) => {
-  try {
-    res.json(await amazonRequest(req.session, 'GET', '/v2/portfolios'));
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/campaigns', requireAuth, requireAmazon, apiLimiter, async (req, res) => {
-  try {
-    const params = {};
-    if (req.query.portfolioId)  params.portfolioId  = req.query.portfolioId;
-    if (req.query.state)        params.state        = req.query.state;
-    if (req.query.campaignType) params.campaignType = req.query.campaignType;
-    res.json(await amazonRequest(req.session, 'GET', '/v2/campaigns', null, params));
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/campaigns', requireAuth, requireAmazon, async (req, res) => {
-  try {
-    res.json(await amazonRequest(req.session, 'POST', '/v2/campaigns', [req.body]));
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.put('/api/campaigns/:id', requireAuth, requireAmazon, async (req, res) => {
-  try {
-    res.json(await amazonRequest(req.session, 'PUT', '/v2/campaigns', [{ campaignId: req.params.id, ...req.body }]));
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/keywords', requireAuth, requireAmazon, apiLimiter, async (req, res) => {
-  try {
-    const params = {};
-    if (req.query.campaignId) params.campaignId = req.query.campaignId;
-    if (req.query.adGroupId)  params.adGroupId  = req.query.adGroupId;
-    if (req.query.state)      params.state      = req.query.state;
-    if (req.query.matchType)  params.matchType  = req.query.matchType;
-    res.json(await amazonRequest(req.session, 'GET', '/v2/keywords', null, params));
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.put('/api/keywords/:id', requireAuth, requireAmazon, async (req, res) => {
-  try {
-    res.json(await amazonRequest(req.session, 'PUT', '/v2/keywords', [{ keywordId: req.params.id, ...req.body }]));
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/keywords/negative', requireAuth, requireAmazon, async (req, res) => {
-  try {
-    res.json(await amazonRequest(req.session, 'POST', '/v2/negativeKeywords', req.body));
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/ad-groups', requireAuth, requireAmazon, apiLimiter, async (req, res) => {
-  try {
-    const params = {};
-    if (req.query.campaignId) params.campaignId = req.query.campaignId;
-    if (req.query.state)      params.state      = req.query.state;
-    res.json(await amazonRequest(req.session, 'GET', '/v2/adGroups', null, params));
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/product-ads', requireAuth, requireAmazon, apiLimiter, async (req, res) => {
-  try {
-    const params = {};
-    if (req.query.campaignId) params.campaignId = req.query.campaignId;
-    if (req.query.adGroupId)  params.adGroupId  = req.query.adGroupId;
-    if (req.query.state)      params.state      = req.query.state;
-    res.json(await amazonRequest(req.session, 'GET', '/v2/productAds', null, params));
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/search-terms', requireAuth, requireAmazon, apiLimiter, async (req, res) => {
-  try {
-    const reportRequest = await amazonRequest(req.session, 'POST', '/v2/reports', {
-      reportDate:  req.query.date || new Date().toISOString().slice(0, 10).replace(/-/g, ''),
-      metrics:     'impressions,clicks,cost,attributedSales30d,attributedConversions30d',
-      segment:     'query',
-      recordType:  'keywords',
+    const data = await mapCallTool('list_resources', {
+      ...mapDefaults(),
+      resource_type: 'sp_portfolios',
     });
-    res.json({ reportId: reportRequest.reportId, status: reportRequest.status });
+    const items = data.items || data || [];
+    res.json(Array.isArray(items) ? items : []);
   } catch (err) {
+    console.error('Portfolios error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-app.get('/api/reports/:reportId', requireAuth, requireAmazon, async (req, res) => {
+// GET /api/campaigns
+app.get('/api/campaigns', requireAuth, apiLimiter, async (req, res) => {
   try {
-    res.json(await amazonRequest(req.session, 'GET', `/v2/reports/${req.params.reportId}`));
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+    const filters = {};
+    if (req.query.state) filters.state_filter = req.query.state.toUpperCase();
 
-app.get('/api/campaign-stats', requireAuth, requireAmazon, apiLimiter, async (req, res) => {
-  try {
-    const reportRequest = await amazonRequest(req.session, 'POST', '/v2/reports', {
-      reportDate:  req.query.date || new Date().toISOString().slice(0, 10).replace(/-/g, ''),
-      metrics:     'impressions,clicks,cost,attributedSales30d,attributedConversions30d,attributedUnitsOrdered30d',
-      recordType:  'campaigns',
+    // Get SP campaigns
+    const spData = await mapCallTool('list_resources', {
+      ...mapDefaults(),
+      resource_type: 'sp_campaigns',
+      filters,
     });
-    res.json({ reportId: reportRequest.reportId, status: reportRequest.status });
+    let campaigns = spData.items || spData || [];
+
+    // Also get SB campaigns
+    try {
+      const sbData = await mapCallTool('list_resources', {
+        ...mapDefaults(),
+        resource_type: 'sb_campaigns',
+        filters,
+      });
+      const sbCampaigns = (sbData.items || sbData || []).map(c => ({
+        ...c,
+        campaignType: 'SB',
+      }));
+      campaigns = [...campaigns.map(c => ({ ...c, campaignType: c.campaignType || 'SP' })), ...sbCampaigns];
+    } catch (e) {
+      console.warn('SB campaigns fetch failed:', e.message);
+    }
+
+    // Filter by portfolio if requested
+    if (req.query.portfolioId) {
+      const pid = req.query.portfolioId;
+      if (pid === 'none') {
+        campaigns = campaigns.filter(c => !c.portfolioId);
+      } else {
+        campaigns = campaigns.filter(c => String(c.portfolioId) === String(pid));
+      }
+    }
+
+    res.json(campaigns);
   } catch (err) {
+    console.error('Campaigns error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
+// PUT /api/campaigns/:id - update a campaign
+app.put('/api/campaigns/:id', requireAuth, async (req, res) => {
+  try {
+    const updateData = { campaignId: req.params.id, ...req.body };
+    const resourceType = req.body._type === 'SB' ? 'sb_campaigns' : 'sp_campaigns';
+    delete updateData._type;
+
+    const result = await mapCallTool('update_resources', {
+      ...mapDefaults(),
+      resources: [{ type: resourceType, ...updateData }],
+      note: 'Updated from AdScale dashboard',
+    });
+    res.json(result);
+  } catch (err) {
+    console.error('Campaign update error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/ad-groups
+app.get('/api/ad-groups', requireAuth, apiLimiter, async (req, res) => {
+  try {
+    if (!req.query.campaignId) {
+      return res.status(400).json({ error: 'campaignId required.' });
+    }
+    const data = await mapCallTool('list_resources', {
+      ...mapDefaults(),
+      resource_type: 'sp_ad_groups',
+      filters: { campaign_id: req.query.campaignId },
+    });
+    res.json(data.items || data || []);
+  } catch (err) {
+    console.error('Ad groups error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/keywords
+app.get('/api/keywords', requireAuth, apiLimiter, async (req, res) => {
+  try {
+    if (!req.query.campaignId) {
+      return res.status(400).json({ error: 'campaignId required.' });
+    }
+    const filters = { campaign_id: req.query.campaignId };
+    if (req.query.adGroupId) filters.ad_group_id = req.query.adGroupId;
+
+    const data = await mapCallTool('list_resources', {
+      ...mapDefaults(),
+      resource_type: 'sp_keywords',
+      filters,
+    });
+    res.json(data.items || data || []);
+  } catch (err) {
+    console.error('Keywords error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/keywords/:id - update a keyword (bid, state)
+app.put('/api/keywords/:id', requireAuth, async (req, res) => {
+  try {
+    const result = await mapCallTool('update_resources', {
+      ...mapDefaults(),
+      resources: [{
+        type: 'sp_keywords',
+        keywordId: req.params.id,
+        ...req.body,
+      }],
+      note: 'Updated from AdScale dashboard',
+    });
+    res.json(result);
+  } catch (err) {
+    console.error('Keyword update error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/keywords/negative - add negative keywords
+app.post('/api/keywords/negative', requireAuth, async (req, res) => {
+  try {
+    const keywords = Array.isArray(req.body) ? req.body : [req.body];
+    const resources = keywords.map(kw => ({
+      type: 'sp_negative_keywords',
+      campaignId: kw.campaignId,
+      adGroupId: kw.adGroupId,
+      keywordText: kw.keywordText,
+      matchType: kw.matchType || 'EXACT',
+      state: 'ENABLED',
+    }));
+
+    const result = await mapCallTool('create_resources', {
+      ...mapDefaults(),
+      resources,
+      note: 'Negative keyword added from AdScale dashboard',
+    });
+    res.json(result);
+  } catch (err) {
+    console.error('Negative keyword error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/product-ads
+app.get('/api/product-ads', requireAuth, apiLimiter, async (req, res) => {
+  try {
+    if (!req.query.campaignId) {
+      return res.status(400).json({ error: 'campaignId required.' });
+    }
+    const filters = { campaign_id: req.query.campaignId };
+    if (req.query.adGroupId) filters.ad_group_id = req.query.adGroupId;
+
+    const data = await mapCallTool('list_resources', {
+      ...mapDefaults(),
+      resource_type: 'sp_product_ads',
+      filters,
+    });
+    res.json(data.items || data || []);
+  } catch (err) {
+    console.error('Product ads error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/targets
+app.get('/api/targets', requireAuth, apiLimiter, async (req, res) => {
+  try {
+    if (!req.query.campaignId) {
+      return res.status(400).json({ error: 'campaignId required.' });
+    }
+    const filters = { campaign_id: req.query.campaignId };
+    if (req.query.adGroupId) filters.ad_group_id = req.query.adGroupId;
+
+    const data = await mapCallTool('list_resources', {
+      ...mapDefaults(),
+      resource_type: 'sp_targets',
+      filters,
+    });
+    res.json(data.items || data || []);
+  } catch (err) {
+    console.error('Targets error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/negative-keywords
+app.get('/api/negative-keywords', requireAuth, apiLimiter, async (req, res) => {
+  try {
+    if (!req.query.campaignId) {
+      return res.status(400).json({ error: 'campaignId required.' });
+    }
+    const filters = { campaign_id: req.query.campaignId };
+    if (req.query.adGroupId) filters.ad_group_id = req.query.adGroupId;
+
+    const data = await mapCallTool('list_resources', {
+      ...mapDefaults(),
+      resource_type: 'sp_negative_keywords',
+      filters,
+    });
+    res.json(data.items || data || []);
+  } catch (err) {
+    console.error('Negative keywords error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/budget-rules
+app.get('/api/budget-rules', requireAuth, apiLimiter, async (req, res) => {
+  try {
+    const filters = {};
+    if (req.query.campaignId) filters.campaign_id = req.query.campaignId;
+
+    const data = await mapCallTool('list_resources', {
+      ...mapDefaults(),
+      resource_type: 'sp_budget_rules',
+      filters,
+    });
+    res.json(data.items || data || []);
+  } catch (err) {
+    console.error('Budget rules error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/product-metadata
+app.get('/api/product-metadata', requireAuth, apiLimiter, async (req, res) => {
+  try {
+    const asins = req.query.asins ? req.query.asins.split(',') : [];
+    if (asins.length === 0) return res.status(400).json({ error: 'asins required.' });
+
+    const data = await mapCallTool('get_amazon_ads_product_metadata', {
+      ...mapDefaults(),
+      asins,
+    });
+    res.json(data);
+  } catch (err) {
+    console.error('Product metadata error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/health
 app.get('/api/health', (req, res) => {
   res.json({
-    status:           'ok',
-    amazonConfigured: !!(AMAZON.clientId && AMAZON.clientSecret),
-    dbConnected:      !!db,
-    region:           AMAZON.region,
-    timestamp:        new Date().toISOString(),
+    status:        'ok',
+    mapConfigured: !!MAP_TOKEN,
+    dbConnected:   !!db,
+    mcpSession:    !!mcpSessionId,
+    timestamp:     new Date().toISOString(),
   });
 });
 
@@ -543,17 +664,19 @@ app.get('*', (req, res) => {
 // Start server
 // ----------------------------------------------------------------
 initDatabase().then(() => {
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log('');
-    console.log('  ╔══════════════════════════════════════╗');
-    console.log('  ║        AdScale Server Running        ║');
-    console.log(`  ║   http://0.0.0.0:${PORT}               ║`);
-    console.log('  ╚══════════════════════════════════════╝');
-    console.log('');
-    console.log(`  Amazon API configured: ${!!(AMAZON.clientId && AMAZON.clientSecret)}`);
-    console.log(`  Database connected:    ${!!db}`);
-    console.log(`  Region: ${AMAZON.region}`);
-    console.log(`  IP allowlist: ${process.env.ALLOWED_IPS ? 'enabled' : 'disabled'}`);
-    console.log('');
+  initMcpSession().then(() => {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log('');
+      console.log('  ======================================');
+      console.log('  |        AdScale Server Running        |');
+      console.log(`  |   http://0.0.0.0:${PORT}               |`);
+      console.log('  ======================================');
+      console.log('');
+      console.log(`  MAP configured:     ${!!MAP_TOKEN}`);
+      console.log(`  MCP session:        ${!!mcpSessionId}`);
+      console.log(`  Database connected: ${!!db}`);
+      console.log(`  IP allowlist:       ${process.env.ALLOWED_IPS ? 'enabled' : 'disabled'}`);
+      console.log('');
+    });
   });
 });
