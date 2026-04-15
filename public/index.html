@@ -904,12 +904,12 @@ walmart</textarea></div>
 const API = {
   async get(url) {
     const r = await fetch(url, { credentials: 'include' });
-    if (r.status === 401) { showLogin(); throw new Error('Not authenticated'); }
+    if (r.status === 401) { throw new Error('Not authenticated'); }
     return r.json();
   },
   async post(url, body) {
     const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) });
-    if (r.status === 401) { showLogin(); throw new Error('Not authenticated'); }
+    if (r.status === 401) { throw new Error('Not authenticated'); }
     return r.json();
   },
   async put(url, body) {
@@ -939,7 +939,13 @@ async function doLogin() {
     if (data.success) {
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('appShell').style.display = 'flex';
-      await initApp();
+      // Directly load data after login — skip auth/status re-check
+      try {
+        const st = await fetch('/auth/status', { credentials: 'include' });
+        const stData = await st.json();
+        updateSyncStatus(stData.lastSync);
+        if (stData.lastSync) await loadAllData();
+      } catch(e) { console.warn('Post-login init error:', e); }
     } else {
       err.style.display = 'block'; err.textContent = data.error || 'Incorrect password.';
       btn.textContent = 'Sign in'; btn.style.opacity = '1';
