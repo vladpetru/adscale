@@ -1,422 +1,242 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AdScale — Amazon PPC</title>
+<title>AdScale</title>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --white: #ffffff;
-  --bg: #f8f9fb;
-  --bg2: #f1f3f7;
-  --border: #e5e8ef;
-  --border2: #d0d5e0;
-  --text: #0f1117;
-  --text2: #5a6278;
-  --text3: #9ba3b8;
-  --accent: #2563eb;
-  --accent-light: #eff4ff;
-  --accent2: #1d4ed8;
-  --green: #16a34a;
-  --green-light: #f0fdf4;
-  --red: #dc2626;
-  --red-light: #fef2f2;
-  --amber: #d97706;
-  --amber-light: #fffbeb;
-  --sans: 'Geist', system-ui, sans-serif;
-  --mono: 'Geist Mono', monospace;
-  --sidebar-w: 232px;
-  --header-h: 56px;
-  --radius: 8px;
-  --radius-lg: 12px;
-  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-}
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; font-family: var(--sans); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
-a { text-decoration: none; color: inherit; }
-button { cursor: pointer; font-family: var(--sans); }
-input, select, textarea { font-family: var(--sans); }
-
-/* ── LAYOUT ── */
-.app { display: flex; height: 100vh; overflow: hidden; }
-
-/* ── SIDEBAR ── */
-.sidebar {
-  width: var(--sidebar-w); min-width: var(--sidebar-w);
-  background: var(--white); border-right: 1px solid var(--border);
-  display: flex; flex-direction: column; height: 100vh; overflow: hidden;
-}
-.sidebar-logo {
-  height: var(--header-h); display: flex; align-items: center;
-  padding: 0 18px; gap: 10px; border-bottom: 1px solid var(--border);
-}
-.logo-icon {
-  width: 30px; height: 30px; background: var(--accent); border-radius: 7px;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.logo-icon svg { width: 16px; height: 16px; }
-.logo-name { font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -0.3px; }
-.logo-name span { color: var(--accent); }
-
-.sidebar-nav { flex: 1; overflow-y: auto; padding: 8px 0; }
-.sidebar-nav::-webkit-scrollbar { width: 0; }
-.nav-section { padding: 16px 18px 4px; }
-.nav-label { font-size: 10.5px; font-weight: 500; color: var(--text3); letter-spacing: 0.6px; text-transform: uppercase; }
-.nav-item {
-  display: flex; align-items: center; gap: 9px;
-  padding: 7px 14px; margin: 1px 4px; border-radius: var(--radius);
-  color: var(--text2); font-size: 13.5px; cursor: pointer;
-  transition: all 0.12s; border: none; background: none; width: calc(100% - 8px);
-  text-align: left;
-}
-.nav-item:hover { background: var(--bg); color: var(--text); }
-.nav-item.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
-.nav-item svg { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.7; }
-.nav-item.active svg { opacity: 1; }
-
-.sidebar-footer {
-  border-top: 1px solid var(--border); padding: 12px 14px;
-}
-.sync-status {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 10px; border-radius: var(--radius);
-  background: var(--bg); border: 1px solid var(--border);
-}
-.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
-.sync-dot.connected { background: var(--green); }
-.sync-dot.syncing { background: var(--amber); animation: pulse 1s infinite; }
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-.sync-info { flex: 1; min-width: 0; }
-.sync-label { font-size: 12px; font-weight: 500; color: var(--text); }
-.sync-time { font-size: 11px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-/* ── MAIN ── */
-.main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
-
-/* ── TOPBAR ── */
-.topbar {
-  height: var(--header-h); background: var(--white);
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; padding: 0 24px; gap: 12px; flex-shrink: 0;
-}
-.page-title { font-size: 16px; font-weight: 600; color: var(--text); flex: 1; letter-spacing: -0.2px; }
-.topbar-actions { display: flex; align-items: center; gap: 8px; }
-
-/* ── BUTTONS ── */
-.btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 14px; border-radius: var(--radius);
-  font-size: 13px; font-weight: 500; border: 1px solid var(--border);
-  background: var(--white); color: var(--text2); transition: all 0.12s; cursor: pointer;
-  white-space: nowrap;
-}
-.btn:hover { border-color: var(--border2); color: var(--text); background: var(--bg); }
-.btn svg { width: 14px; height: 14px; }
-.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn-primary:hover { background: var(--accent2); border-color: var(--accent2); color: #fff; }
-.btn-sm { padding: 5px 10px; font-size: 12px; }
-.btn-danger { background: var(--red-light); border-color: #fca5a5; color: var(--red); }
-.btn-danger:hover { background: #fee2e2; }
-.btn.loading { opacity: 0.6; pointer-events: none; }
-
-/* ── CONTENT ── */
-.content { flex: 1; overflow-y: auto; padding: 24px; }
-.content::-webkit-scrollbar { width: 5px; }
-.content::-webkit-scrollbar-track { background: transparent; }
-.content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
-
-/* ── PAGES ── */
-.page { display: none; flex-direction: column; gap: 20px; animation: fadeIn 0.15s ease; }
-.page.active { display: flex; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-
-/* ── CARDS ── */
-.card {
-  background: var(--white); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); overflow: hidden;
-}
-.card-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 18px; border-bottom: 1px solid var(--border);
-}
-.card-title { font-size: 13.5px; font-weight: 600; color: var(--text); }
-.card-subtitle { font-size: 12px; color: var(--text3); margin-top: 1px; }
-.card-body { padding: 18px; }
-
-/* ── METRIC CARDS ── */
-.metric-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-.metric-card {
-  background: var(--white); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 16px 18px;
-  transition: box-shadow 0.15s;
-}
-.metric-card:hover { box-shadow: var(--shadow-md); }
-.metric-label { font-size: 11.5px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-.metric-value { font-size: 24px; font-weight: 600; color: var(--text); letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
-.metric-delta { font-size: 12px; margin-top: 4px; display: flex; align-items: center; gap: 3px; }
-.delta-up { color: var(--green); }
-.delta-down { color: var(--red); }
-.delta-flat { color: var(--text3); }
-
-/* ── TABLES ── */
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-thead th {
-  padding: 10px 14px; text-align: left; font-size: 11.5px; font-weight: 500;
-  color: var(--text3); text-transform: uppercase; letter-spacing: 0.4px;
-  border-bottom: 1px solid var(--border); background: var(--bg);
-  white-space: nowrap;
-}
-thead th:last-child { text-align: right; }
-tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
-tbody tr:last-child { border-bottom: none; }
-tbody tr:hover { background: var(--bg); }
-tbody td { padding: 11px 14px; color: var(--text); vertical-align: middle; }
-tbody td:last-child { text-align: right; }
-.td-mono { font-family: var(--mono); font-size: 12.5px; }
-.td-muted { color: var(--text2); }
-
-/* ── BADGES ── */
-.badge {
-  display: inline-flex; align-items: center;
-  padding: 2px 8px; border-radius: 4px;
-  font-size: 11.5px; font-weight: 500; white-space: nowrap;
-}
-.badge-green { background: var(--green-light); color: var(--green); }
-.badge-red { background: var(--red-light); color: var(--red); }
-.badge-amber { background: var(--amber-light); color: var(--amber); }
-.badge-blue { background: var(--accent-light); color: var(--accent); }
-.badge-gray { background: var(--bg2); color: var(--text2); border: 1px solid var(--border); }
-
-/* ── ACOS BAR ── */
-.acos-wrap { display: flex; align-items: center; gap: 8px; min-width: 100px; }
-.acos-bar { flex: 1; height: 4px; background: var(--bg2); border-radius: 2px; overflow: hidden; }
-.acos-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
-.acos-fill.good { background: var(--green); }
-.acos-fill.warn { background: var(--amber); }
-.acos-fill.bad { background: var(--red); }
-.acos-val { font-size: 12px; font-family: var(--mono); color: var(--text2); min-width: 38px; text-align: right; }
-
-/* ── FILTER BAR ── */
-.filter-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.search-input {
-  flex: 1; max-width: 260px;
-  border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 7px 12px; font-size: 13px; color: var(--text);
-  background: var(--white); outline: none; transition: border-color 0.15s;
-}
-.search-input:focus { border-color: var(--accent); }
-.search-input::placeholder { color: var(--text3); }
-.filter-select {
-  border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 7px 10px; font-size: 13px; color: var(--text2);
-  background: var(--white); outline: none; cursor: pointer; transition: border-color 0.15s;
-}
-.filter-select:focus { border-color: var(--accent); }
-
-/* ── EMPTY STATE ── */
-.empty-state {
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; padding: 60px 24px; gap: 12px; text-align: center;
-}
-.empty-icon { width: 44px; height: 44px; border-radius: 50%; background: var(--bg2); display: flex; align-items: center; justify-content: center; }
-.empty-icon svg { width: 22px; height: 22px; color: var(--text3); }
-.empty-title { font-size: 15px; font-weight: 600; color: var(--text); }
-.empty-desc { font-size: 13px; color: var(--text3); max-width: 320px; line-height: 1.6; }
-
-/* ── STATUS DOT ── */
-.status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 7px; flex-shrink: 0; }
-.dot-green { background: var(--green); }
-.dot-amber { background: var(--amber); }
-.dot-gray { background: var(--text3); }
-
-/* ── BID INPUT ── */
-.bid-wrap {
-  display: inline-flex; align-items: center; gap: 2px;
-  border: 1px solid var(--border); border-radius: 6px;
-  padding: 4px 8px; background: var(--white); transition: border-color 0.15s;
-  width: 88px;
-}
-.bid-wrap:focus-within { border-color: var(--accent); }
-.bid-prefix { font-size: 12px; color: var(--text3); font-family: var(--mono); }
-.bid-input {
-  border: none; outline: none; background: transparent;
-  font-size: 12.5px; font-family: var(--mono); color: var(--text); width: 44px;
-}
-.bid-input::-webkit-inner-spin-button { -webkit-appearance: none; }
-.bid-confirm { border: none; background: none; color: var(--text3); font-size: 13px; cursor: pointer; padding: 0 2px; line-height: 1; }
-.bid-confirm:hover { color: var(--accent); }
-.bid-wrap.saved { border-color: var(--green); }
-
-/* ── KW TOGGLE ── */
-.kw-toggle {
-  font-size: 11.5px; font-weight: 500; padding: 4px 10px;
-  border-radius: 5px; border: 1px solid; cursor: pointer; transition: all 0.12s;
-  font-family: var(--sans);
-}
-.kw-toggle.is-enabled { background: var(--amber-light); border-color: #fcd34d; color: var(--amber); }
-.kw-toggle.is-enabled:hover { background: #fef3c7; }
-.kw-toggle.is-paused { background: var(--green-light); border-color: #86efac; color: var(--green); }
-.kw-toggle.is-paused:hover { background: #dcfce7; }
-
-/* ── TOGGLE SWITCH ── */
-.toggle {
-  width: 34px; height: 19px; border-radius: 10px; border: none;
-  cursor: pointer; transition: background 0.2s; position: relative; flex-shrink: 0;
-}
-.toggle::after {
-  content: ''; position: absolute; width: 13px; height: 13px;
-  border-radius: 50%; background: #fff; top: 3px; transition: left 0.2s;
-}
-.toggle.off { background: var(--border2); }
-.toggle.off::after { left: 3px; }
-.toggle.on { background: var(--accent); }
-.toggle.on::after { left: 18px; }
-
-/* ── ALGO CARDS ── */
-.algo-card {
-  background: var(--white); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); overflow: hidden; transition: border-color 0.15s;
-}
-.algo-card.enabled { border-color: #93c5fd; }
-.algo-card.expanded { box-shadow: var(--shadow-md); }
-.algo-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 18px; cursor: pointer; user-select: none; gap: 12px;
-}
-.algo-header:hover { background: var(--bg); }
-.algo-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
-.algo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border2); flex-shrink: 0; }
-.algo-dot.on { background: var(--accent); }
-.algo-name { font-size: 13.5px; font-weight: 600; color: var(--text); }
-.algo-desc { font-size: 12px; color: var(--text3); margin-top: 1px; }
-.algo-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.algo-chevron { width: 16px; height: 16px; color: var(--text3); transition: transform 0.2s; }
-.algo-card.expanded .algo-chevron { transform: rotate(180deg); }
-.algo-body { display: none; padding: 0 18px 18px; border-top: 1px solid var(--border); }
-.algo-card.expanded .algo-body { display: block; }
-.algo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; padding-top: 16px; }
-.algo-field { display: flex; flex-direction: column; gap: 5px; }
-.algo-label { font-size: 11.5px; font-weight: 500; color: var(--text2); }
-.algo-input {
-  border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 7px 10px; font-size: 13px; color: var(--text);
-  background: var(--white); outline: none; transition: border-color 0.15s; width: 100%;
-  font-family: var(--mono);
-}
-.algo-input:focus { border-color: var(--accent); }
-.algo-select {
-  border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 7px 10px; font-size: 13px; color: var(--text);
-  background: var(--white); outline: none; width: 100%; cursor: pointer;
-  transition: border-color 0.15s;
-}
-.algo-select:focus { border-color: var(--accent); }
-.algo-textarea {
-  border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 8px 10px; font-size: 12.5px; color: var(--text);
-  background: var(--white); outline: none; width: 100%; resize: vertical;
-  min-height: 80px; font-family: var(--mono); line-height: 1.6;
-  transition: border-color 0.15s;
-}
-.algo-textarea:focus { border-color: var(--accent); }
-.algo-hint { font-size: 11px; color: var(--text3); line-height: 1.4; }
-.algo-actions { display: flex; align-items: center; gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
-.algo-saved { font-size: 11.5px; color: var(--green); opacity: 0; transition: opacity 0.3s; }
-.algo-saved.show { opacity: 1; }
-
-/* ── HOUR GRID ── */
-.hour-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; margin: 8px 0; }
-.hour-cell {
-  height: 28px; border-radius: 4px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 9.5px; font-family: var(--mono); color: var(--text3);
-  border: 1px solid var(--border); background: var(--bg);
-  transition: all 0.12s; user-select: none;
-}
-.hour-cell.on { background: var(--accent-light); border-color: #93c5fd; color: var(--accent); }
-.hour-cell:hover { border-color: var(--border2); }
-
-/* ── DAY BUDGET ── */
-.day-budget-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; padding: 10px 0 4px; }
-.day-bud-item { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-.day-label { font-size: 11px; color: var(--text3); font-weight: 500; text-transform: uppercase; }
-.day-bud-item .algo-input { text-align: center; padding: 6px 4px; }
-
-/* ── TABS ── */
-.tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 20px; gap: 0; }
-.tab { padding: 10px 16px; font-size: 13px; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.12s; }
-.tab:hover { color: var(--text2); }
-.tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
-
-/* ── ASIN CARDS ── */
-.asin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-.asin-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; transition: all 0.15s; }
-.asin-card:hover { box-shadow: var(--shadow-md); }
-.asin-card.automated { border-color: #93c5fd; }
-.asin-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
-.asin-name { font-size: 13.5px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
-.asin-id { font-size: 11px; font-family: var(--mono); color: var(--text3); }
-.asin-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.asin-metric { background: var(--bg); border-radius: var(--radius); padding: 8px 10px; }
-.asin-metric-label { font-size: 10.5px; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 3px; }
-.asin-metric-val { font-size: 14px; font-family: var(--mono); font-weight: 500; color: var(--text); }
-
-/* ── RESTOCK BAR ── */
-.restock-track { height: 4px; background: var(--bg2); border-radius: 2px; overflow: hidden; margin: 6px 0; }
-.restock-fill { height: 100%; border-radius: 2px; }
-
-/* ── REFRESH BANNER ── */
-.refresh-banner {
-  background: var(--accent-light); border: 1px solid #93c5fd;
-  border-radius: var(--radius-lg); padding: 14px 18px;
-  display: flex; align-items: center; gap: 12px;
-}
-.refresh-banner svg { width: 18px; height: 18px; color: var(--accent); flex-shrink: 0; }
-.refresh-banner-text { flex: 1; font-size: 13px; color: var(--accent); font-weight: 500; }
-.refresh-banner-sub { font-size: 12px; color: #3b82f6; font-weight: 400; margin-top: 1px; }
-
-/* ── LOGIN SCREEN ── */
-#loginScreen {
-  position: fixed; inset: 0; z-index: 9999;
-  background: var(--bg); display: flex; align-items: center; justify-content: center;
-}
-.login-box {
-  width: 360px; background: var(--white); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 32px; box-shadow: var(--shadow-md);
-}
-.login-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; justify-content: center; }
-.login-title { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 6px; text-align: center; }
-.login-sub { font-size: 13px; color: var(--text3); text-align: center; margin-bottom: 24px; }
-.login-input {
-  width: 100%; border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 10px 14px; font-size: 14px; color: var(--text); outline: none;
-  margin-bottom: 12px; transition: border-color 0.15s; background: var(--white);
-}
-.login-input:focus { border-color: var(--accent); }
-.login-btn {
-  width: 100%; background: var(--accent); border: none; border-radius: var(--radius);
-  padding: 10px; color: #fff; font-size: 14px; font-weight: 500; cursor: pointer;
-  transition: background 0.15s; font-family: var(--sans);
-}
-.login-btn:hover { background: var(--accent2); }
-.login-error { font-size: 12px; color: var(--red); margin-top: 10px; text-align: center; display: none; }
-.login-footer { font-size: 11px; color: var(--text3); text-align: center; margin-top: 20px; }
-
-/* ── TWO COL ── */
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
-/* ── SECTION HEADER ── */
-.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-.section-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.4px; }
+[data-theme="light"]{--bg:#f8f9fb;--bg2:#f1f3f7;--white:#ffffff;--border:#e5e8ef;--border2:#d0d5e0;--text:#0f1117;--text2:#5a6278;--text3:#9ba3b8;--shadow:0 1px 3px rgba(0,0,0,0.06);--shadow-md:0 4px 12px rgba(0,0,0,0.08)}
+[data-theme="dark"]{--bg:#0f1117;--bg2:#181c22;--white:#1e2230;--border:#252b35;--border2:#2e3640;--text:#e8eaf0;--text2:#8a94a6;--text3:#535d6e;--shadow:0 1px 3px rgba(0,0,0,0.3);--shadow-md:0 4px 12px rgba(0,0,0,0.4)}
+:root{--accent:#2563eb;--accent-light:#eff4ff;--accent2:#1d4ed8;--green:#16a34a;--green-light:#f0fdf4;--red:#dc2626;--red-light:#fef2f2;--amber:#d97706;--amber-light:#fffbeb;--sans:"Geist",system-ui,sans-serif;--mono:"Geist Mono",monospace;--sidebar-w:240px;--header-h:56px;--radius:8px;--radius-lg:12px}
+[data-theme="dark"] .badge-blue{background:rgba(37,99,235,0.2);color:#60a5fa}
+[data-theme="dark"] .badge-green{background:rgba(22,163,74,0.2);color:#4ade80}
+[data-theme="dark"] .badge-amber{background:rgba(217,119,6,0.2);color:#fbbf24}
+[data-theme="dark"] .badge-red{background:rgba(220,38,38,0.2);color:#f87171}
+[data-theme="dark"] .badge-gray{background:rgba(90,98,120,0.2);color:var(--text2);border-color:var(--border)}
+[data-theme="dark"] .card,[data-theme="dark"] .algo-card,[data-theme="dark"] .metric-card,[data-theme="dark"] .login-box,[data-theme="dark"] .sidebar,[data-theme="dark"] .topbar,[data-theme="dark"] .drawer{background:var(--white);border-color:var(--border)}
+[data-theme="dark"] .btn{background:var(--white);border-color:var(--border);color:var(--text2)}
+[data-theme="dark"] .btn:hover{background:var(--bg2);color:var(--text)}
+[data-theme="dark"] .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+[data-theme="dark"] .filter-select,[data-theme="dark"] .search-input,[data-theme="dark"] .form-input,[data-theme="dark"] .form-select,[data-theme="dark"] .algo-input,[data-theme="dark"] .algo-select,[data-theme="dark"] .algo-textarea,[data-theme="dark"] .login-input{background:var(--bg2);border-color:var(--border);color:var(--text)}
+[data-theme="dark"] thead th{background:var(--bg2)}
+[data-theme="dark"] tbody tr:hover{background:var(--bg2)}
+[data-theme="dark"] .hour-cell{background:var(--bg2);border-color:var(--border);color:var(--text3)}
+[data-theme="dark"] .hour-cell.on{background:rgba(37,99,235,0.2);border-color:#3b82f6;color:#60a5fa}
+[data-theme="dark"] .nav-item.active{background:rgba(37,99,235,0.15)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{text-decoration:none;color:inherit}
+button{cursor:pointer;font-family:var(--sans)}
+input,select,textarea{font-family:var(--sans)}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.sidebar-logo{height:var(--header-h);display:flex;align-items:center;padding:0 18px;gap:10px;border-bottom:1px solid var(--border)}
+.logo-icon{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-icon svg{width:16px;height:16px}
+.logo-name{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-0.3px}
+.logo-name span{color:var(--accent)}
+.sidebar-nav{flex:1;overflow-y:auto;padding:8px 0}
+.sidebar-nav::-webkit-scrollbar{width:0}
+.nav-section{padding:14px 18px 4px}
+.nav-label{font-size:10.5px;font-weight:500;color:var(--text3);letter-spacing:0.6px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:9px;padding:7px 14px;margin:1px 4px;border-radius:var(--radius);color:var(--text2);font-size:13.5px;cursor:pointer;transition:all 0.12s;border:none;background:none;width:calc(100% - 8px);text-align:left}
+.nav-item:hover{background:var(--bg);color:var(--text)}
+.nav-item.active{background:var(--accent-light);color:var(--accent);font-weight:500}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;opacity:0.7}
+.nav-item.active svg{opacity:1}
+.sidebar-footer{border-top:1px solid var(--border);padding:12px 14px}
+.sync-status{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius);background:var(--bg);border:1px solid var(--border)}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.sync-dot.connected{background:var(--green)}
+.sync-dot.syncing{background:var(--amber);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.sync-info{flex:1;min-width:0}
+.sync-label{font-size:12px;font-weight:500;color:var(--text)}
+.sync-time{font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar{height:var(--header-h);background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;flex-shrink:0}
+.page-title{font-size:16px;font-weight:600;color:var(--text);flex:1;letter-spacing:-0.2px}
+.topbar-actions{display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);font-size:13px;font-weight:500;border:1px solid var(--border);background:var(--white);color:var(--text2);transition:all 0.12s;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--border2);color:var(--text);background:var(--bg)}
+.btn svg{width:14px;height:14px}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn.loading{opacity:0.6;pointer-events:none}
+.icon-btn{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:var(--radius);border:1px solid var(--border);background:var(--white);color:var(--text2);cursor:pointer;transition:all 0.12s}
+.icon-btn:hover{border-color:var(--border2);color:var(--text);background:var(--bg)}
+.icon-btn svg{width:15px;height:15px}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.content{flex:1;overflow-y:auto;padding:24px}
+.content::-webkit-scrollbar{width:5px}
+.content::-webkit-scrollbar-track{background:transparent}
+.content::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+.page{display:none;flex-direction:column;gap:20px;animation:fadeIn 0.15s ease}
+.page.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.card-title{font-size:13.5px;font-weight:600;color:var(--text)}
+.card-subtitle{font-size:12px;color:var(--text3);margin-top:1px}
+.metric-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.metric-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;transition:box-shadow 0.15s}
+.metric-card:hover{box-shadow:var(--shadow-md)}
+.metric-label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.metric-value{font-size:22px;font-weight:600;color:var(--text);letter-spacing:-0.5px;font-variant-numeric:tabular-nums}
+.metric-delta{font-size:11.5px;margin-top:3px;color:var(--text3)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{padding:9px 14px;text-align:left;font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;border-bottom:1px solid var(--border);background:var(--bg);white-space:nowrap}
+thead th:last-child{text-align:right}
+tbody tr{border-bottom:1px solid var(--border);transition:background 0.1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--bg)}
+tbody td{padding:10px 14px;color:var(--text);vertical-align:middle}
+tbody td:last-child{text-align:right}
+.td-mono{font-family:var(--mono);font-size:12.5px}
+.td-muted{color:var(--text2)}
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:11.5px;font-weight:500;white-space:nowrap}
+.badge-green{background:var(--green-light);color:var(--green)}
+.badge-red{background:var(--red-light);color:var(--red)}
+.badge-amber{background:var(--amber-light);color:var(--amber)}
+.badge-blue{background:var(--accent-light);color:var(--accent)}
+.badge-gray{background:var(--bg2);color:var(--text2);border:1px solid var(--border)}
+.acos-wrap{display:flex;align-items:center;gap:8px;min-width:100px}
+.acos-bar{flex:1;height:4px;background:var(--bg2);border-radius:2px;overflow:hidden}
+.acos-fill{height:100%;border-radius:2px}
+.acos-fill.good{background:var(--green)}
+.acos-fill.warn{background:var(--amber)}
+.acos-fill.bad{background:var(--red)}
+.acos-val{font-size:12px;font-family:var(--mono);color:var(--text2);min-width:38px;text-align:right}
+.filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.search-input{flex:1;max-width:240px;border:1px solid var(--border);border-radius:var(--radius);padding:7px 12px;font-size:13px;color:var(--text);background:var(--white);outline:none;transition:border-color 0.15s}
+.search-input:focus{border-color:var(--accent)}
+.search-input::placeholder{color:var(--text3)}
+.filter-select{border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-size:13px;color:var(--text2);background:var(--white);outline:none;cursor:pointer;transition:border-color 0.15s}
+.filter-select:focus{border-color:var(--accent)}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;gap:12px;text-align:center}
+.empty-icon{width:44px;height:44px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center}
+.empty-icon svg{width:22px;height:22px;color:var(--text3)}
+.empty-title{font-size:15px;font-weight:600;color:var(--text)}
+.empty-desc{font-size:13px;color:var(--text3);max-width:340px;line-height:1.6}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:7px;flex-shrink:0}
+.dot-green{background:var(--green)}
+.dot-amber{background:var(--amber)}
+.dot-gray{background:var(--text3)}
+.bid-wrap{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--border);border-radius:6px;padding:4px 8px;background:var(--white);transition:border-color 0.15s;width:90px}
+.bid-wrap:focus-within{border-color:var(--accent)}
+.bid-prefix{font-size:12px;color:var(--text3);font-family:var(--mono)}
+.bid-input{border:none;outline:none;background:transparent;font-size:12.5px;font-family:var(--mono);color:var(--text);width:44px}
+.bid-input::-webkit-inner-spin-button{-webkit-appearance:none}
+.bid-confirm{border:none;background:none;color:var(--text3);font-size:13px;cursor:pointer;padding:0 2px}
+.bid-confirm:hover{color:var(--accent)}
+.bid-wrap.saved{border-color:var(--green)}
+.kw-toggle{font-size:11.5px;font-weight:500;padding:4px 10px;border-radius:5px;border:1px solid;cursor:pointer;transition:all 0.12s;font-family:var(--sans)}
+.kw-toggle.is-enabled{background:var(--amber-light);border-color:#fcd34d;color:var(--amber)}
+.kw-toggle.is-paused{background:var(--green-light);border-color:#86efac;color:var(--green)}
+.toggle{width:34px;height:19px;border-radius:10px;border:none;cursor:pointer;transition:background 0.2s;position:relative;flex-shrink:0}
+.toggle::after{content:"";position:absolute;width:13px;height:13px;border-radius:50%;background:#fff;top:3px;transition:left 0.2s}
+.toggle.off{background:var(--border2)}
+.toggle.off::after{left:3px}
+.toggle.on{background:var(--accent)}
+.toggle.on::after{left:18px}
+.algo-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:border-color 0.15s}
+.algo-card.enabled{border-color:#93c5fd}
+.algo-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none;gap:12px}
+.algo-header:hover{background:var(--bg)}
+.algo-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.algo-dot{width:8px;height:8px;border-radius:50%;background:var(--border2);flex-shrink:0}
+.algo-dot.on{background:var(--accent)}
+.algo-name{font-size:13.5px;font-weight:600;color:var(--text)}
+.algo-desc{font-size:12px;color:var(--text3);margin-top:1px}
+.algo-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.algo-chevron{width:16px;height:16px;color:var(--text3);transition:transform 0.2s}
+.algo-card.expanded .algo-chevron{transform:rotate(180deg)}
+.algo-body{display:none;padding:0 18px 18px;border-top:1px solid var(--border)}
+.algo-card.expanded .algo-body{display:block}
+.algo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding-top:16px}
+.algo-field{display:flex;flex-direction:column;gap:5px}
+.algo-label{font-size:11.5px;font-weight:500;color:var(--text2)}
+.algo-input{border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-size:13px;color:var(--text);background:var(--white);outline:none;transition:border-color 0.15s;width:100%;font-family:var(--mono)}
+.algo-input:focus{border-color:var(--accent)}
+.algo-select{border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-size:13px;color:var(--text);background:var(--white);outline:none;width:100%;cursor:pointer;transition:border-color 0.15s}
+.algo-select:focus{border-color:var(--accent)}
+.algo-textarea{border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:12.5px;color:var(--text);background:var(--white);outline:none;width:100%;resize:vertical;min-height:80px;font-family:var(--mono);line-height:1.6;transition:border-color 0.15s}
+.algo-textarea:focus{border-color:var(--accent)}
+.algo-hint{font-size:11px;color:var(--text3);line-height:1.4}
+.algo-actions{display:flex;align-items:center;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+.algo-saved{font-size:11.5px;color:var(--green);opacity:0;transition:opacity 0.3s}
+.algo-saved.show{opacity:1}
+.hour-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin:8px 0}
+.hour-cell{height:28px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-family:var(--mono);color:var(--text3);border:1px solid var(--border);background:var(--bg);transition:all 0.12s;user-select:none}
+.hour-cell.on{background:var(--accent-light);border-color:#93c5fd;color:var(--accent)}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab{padding:10px 16px;font-size:13px;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.12s}
+.tab:hover{color:var(--text2)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
+.day-budget-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;padding:10px 0 4px}
+.day-bud-item{display:flex;flex-direction:column;align-items:center;gap:5px}
+.day-label{font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase}
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:200;display:none}
+.drawer-overlay.open{display:block}
+.drawer{position:fixed;right:0;top:0;height:100vh;width:480px;max-width:95vw;background:var(--white);border-left:1px solid var(--border);z-index:201;transform:translateX(100%);transition:transform 0.25s ease;display:flex;flex-direction:column;box-shadow:var(--shadow-md)}
+.drawer.open{transform:translateX(0)}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+.drawer-title{font-size:16px;font-weight:600;color:var(--text)}
+.drawer-close{border:none;background:none;cursor:pointer;color:var(--text3);font-size:20px;line-height:1;padding:4px}
+.drawer-close:hover{color:var(--text)}
+.drawer-body{flex:1;overflow-y:auto;padding:20px}
+.drawer-footer{padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:10px;flex-shrink:0}
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.form-label{font-size:12px;font-weight:500;color:var(--text2)}
+.form-input{border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:13px;color:var(--text);background:var(--white);outline:none;transition:border-color 0.15s;width:100%}
+.form-input:focus{border-color:var(--accent)}
+.form-select{border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:13px;color:var(--text);background:var(--white);outline:none;width:100%;cursor:pointer;transition:border-color 0.15s}
+.form-select:focus{border-color:var(--accent)}
+.form-hint{font-size:11.5px;color:var(--text3)}
+.form-section{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin:20px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.portfolio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.portfolio-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;cursor:pointer;transition:all 0.15s}
+.portfolio-card:hover{box-shadow:var(--shadow-md);border-color:var(--accent)}
+.portfolio-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px}
+.portfolio-meta{font-size:12px;color:var(--text3)}
+.portfolio-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.portfolio-stat{background:var(--bg);border-radius:var(--radius);padding:8px 10px}
+.portfolio-stat-label{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px}
+.portfolio-stat-val{font-size:14px;font-family:var(--mono);font-weight:500;color:var(--text);margin-top:2px}
+.refresh-banner{background:var(--accent-light);border:1px solid #93c5fd;border-radius:var(--radius-lg);padding:14px 18px;display:flex;align-items:center;gap:12px}
+.refresh-banner svg{width:18px;height:18px;color:var(--accent);flex-shrink:0}
+.refresh-banner-text{flex:1;font-size:13px;color:var(--accent);font-weight:500}
+.refresh-banner-sub{font-size:12px;color:#3b82f6;font-weight:400;margin-top:1px}
+#loginScreen{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center}
+.login-box{width:360px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;box-shadow:var(--shadow-md)}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px;justify-content:center}
+.login-title{font-size:18px;font-weight:600;color:var(--text);margin-bottom:6px;text-align:center}
+.login-sub{font-size:13px;color:var(--text3);text-align:center;margin-bottom:24px}
+.login-input{width:100%;border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:14px;color:var(--text);outline:none;margin-bottom:12px;transition:border-color 0.15s;background:var(--white)}
+.login-input:focus{border-color:var(--accent)}
+.login-btn{width:100%;background:var(--accent);border:none;border-radius:var(--radius);padding:10px;color:#fff;font-size:14px;font-weight:500;cursor:pointer;transition:background 0.15s;font-family:var(--sans)}
+.login-btn:hover{background:var(--accent2)}
+.login-error{font-size:12px;color:var(--red);margin-top:10px;text-align:center;display:none}
+.login-footer{font-size:11px;color:var(--text3);text-align:center;margin-top:20px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.section-title{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px}
+.chart-area{padding:20px}
+.chart-bars{display:flex;align-items:flex-end;gap:2px;height:120px}
+.chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:0;height:100%;justify-content:flex-end}
+.chart-bar{width:100%;border-radius:2px 2px 0 0;min-height:2px}
+.chart-bar.spend-bar{background:var(--accent);opacity:0.7}
+.chart-bar.sales-bar{background:var(--green);opacity:0.6}
+.chart-labels{display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:var(--text3);font-family:var(--mono)}
+.chart-legend{display:flex;gap:16px;font-size:11.5px}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-dot{width:8px;height:8px;border-radius:2px}
 </style>
 </head>
 <body>
 
-<!-- LOGIN SCREEN -->
 <div id="loginScreen">
   <div class="login-box">
     <div class="login-logo">
@@ -430,1065 +250,1023 @@ tbody td:last-child { text-align: right; }
     <input class="login-input" id="loginPw" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()"/>
     <button class="login-btn" onclick="doLogin()">Sign in</button>
     <div class="login-error" id="loginErr"></div>
-    <div class="login-footer">AdScale · Private access</div>
+    <div class="login-footer">AdScale &middot; Private access</div>
   </div>
 </div>
 
-<!-- APP -->
-<div class="app" id="appShell" style="display:none">
+<div class="drawer-overlay" id="campDrawerOverlay" onclick="closeCampDrawer()"></div>
+<div class="drawer" id="campDrawer">
+  <div class="drawer-header"><div class="drawer-title">New Campaign</div><button class="drawer-close" onclick="closeCampDrawer()">&times;</button></div>
+  <div class="drawer-body">
+    <div class="form-section">Campaign Type</div>
+    <div class="form-group"><label class="form-label">Ad Type</label>
+      <select class="form-select" id="nc-adtype">
+        <option value="SP_AUTO">Sponsored Products &mdash; Auto</option>
+        <option value="SP_MANUAL">Sponsored Products &mdash; Manual</option>
+        <option value="SB">Sponsored Brands</option>
+        <option value="SD">Sponsored Display</option>
+      </select></div>
+    <div class="form-section">Campaign Settings</div>
+    <div class="form-group"><label class="form-label">Campaign Name</label><input class="form-input" id="nc-name" type="text" placeholder="e.g. WOOD - SP KW EXACT5"/></div>
+    <div class="form-group"><label class="form-label">Portfolio</label><select class="form-select" id="nc-portfolio"><option value="">No Portfolio</option></select></div>
+    <div class="form-group"><label class="form-label">Daily Budget ($)</label><input class="form-input" id="nc-budget" type="number" value="50" min="1"/></div>
+    <div class="form-group"><label class="form-label">Start Date</label><input class="form-input" id="nc-startdate" type="date"/></div>
+    <div class="form-group"><label class="form-label">Bidding Strategy</label>
+      <select class="form-select" id="nc-strategy">
+        <option value="LEGACY_FOR_SALES">Dynamic bids &mdash; down only</option>
+        <option value="AUTO_FOR_SALES">Dynamic bids &mdash; up and down</option>
+        <option value="MANUAL">Fixed bids</option>
+      </select></div>
+    <div class="form-section">Ad Group</div>
+    <div class="form-group"><label class="form-label">Ad Group Name</label><input class="form-input" id="nc-adgroup" type="text" placeholder="Default"/></div>
+    <div class="form-group"><label class="form-label">Default Bid ($)</label><input class="form-input" id="nc-defaultbid" type="number" value="0.75" min="0.02" step="0.01"/></div>
+    <div class="form-group"><label class="form-label">ASINs (one per line)</label><textarea class="form-input" id="nc-asins" rows="3" placeholder="B08XXXXXX"></textarea><span class="form-hint">ASINs to advertise in this campaign</span></div>
+    <div id="nc-error" style="color:var(--red);font-size:12px;display:none;margin-top:8px"></div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-primary" onclick="submitNewCampaign()" id="nc-submit-btn">Create Campaign</button>
+    <button class="btn" onclick="closeCampDrawer()">Cancel</button>
+  </div>
+</div>
 
-  <!-- SIDEBAR -->
+<div class="drawer-overlay" id="addCampDrawerOverlay" onclick="closeAddCampDrawer()"></div>
+<div class="drawer" id="addCampDrawer">
+  <div class="drawer-header"><div class="drawer-title">Add to Campaign</div><button class="drawer-close" onclick="closeAddCampDrawer()">&times;</button></div>
+  <div class="drawer-body">
+    <div class="form-group"><label class="form-label">Search Term</label><input class="form-input" id="ac-term" type="text" readonly style="background:var(--bg)"/></div>
+    <div class="form-group"><label class="form-label">Target Campaign</label><select class="form-select" id="ac-campaign" onchange="loadAdGroupsForCamp()"><option value="">Select campaign...</option></select></div>
+    <div class="form-group"><label class="form-label">Ad Group</label><select class="form-select" id="ac-adgroup"><option value="">Select ad group...</option></select></div>
+    <div class="form-group"><label class="form-label">Match Type</label><select class="form-select" id="ac-match"><option value="EXACT">Exact</option><option value="PHRASE">Phrase</option><option value="BROAD">Broad</option></select></div>
+    <div class="form-group"><label class="form-label">Bid ($)</label><input class="form-input" id="ac-bid" type="number" value="0.75" min="0.02" step="0.01"/></div>
+    <div id="ac-error" style="color:var(--red);font-size:12px;display:none;margin-top:8px"></div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-primary" onclick="submitAddToCampaign()" id="ac-submit-btn">Add Keyword</button>
+    <button class="btn" onclick="closeAddCampDrawer()">Cancel</button>
+  </div>
+</div>
+
+<div class="app" id="appShell" style="display:none">
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-icon">
-        <svg viewBox="0 0 16 16" fill="none"><path d="M3 12L8 4L13 12" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 9H10.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/></svg>
-      </div>
+      <div class="logo-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M3 12L8 4L13 12" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 9H10.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/></svg></div>
       <span class="logo-name">Ad<span>Scale</span></span>
     </div>
-
     <nav class="sidebar-nav">
       <div class="nav-section"><div class="nav-label">Overview</div></div>
-      <button class="nav-item active" onclick="nav('dashboard',this)">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-        Dashboard
-      </button>
-      <button class="nav-item" onclick="nav('analytics',this)">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,12 5,7 8,9 12,4 15,6"/></svg>
-        Analytics
-      </button>
-
+      <button class="nav-item active" onclick="nav('dashboard',this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>Dashboard</button>
+      <button class="nav-item" onclick="nav('analytics',this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,12 5,7 8,9 12,4 15,6"/></svg>Analytics</button>
       <div class="nav-section"><div class="nav-label">Advertising</div></div>
-      <button class="nav-item" onclick="nav('campaigns',this)">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8L7 3L12 8"/><path d="M4 12V8"/><path d="M10 12V8"/><path d="M7 3V13"/></svg>
-        Campaigns
-      </button>
-      <button class="nav-item" onclick="nav('keywords',this)">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="4"/><path d="M9.5 9.5L14 14"/></svg>
-        Keywords
-      </button>
-      <button class="nav-item" onclick="nav('searchterms',this)">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="2" rx="1"/><rect x="1" y="7" width="10" height="2" rx="1"/><rect x="1" y="11" width="7" height="2" rx="1"/></svg>
-        Search Terms
-      </button>
-
+      <button class="nav-item" onclick="nav('campaigns',this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8L7 3L12 8"/><path d="M7 3V13"/></svg>Campaigns</button>
+      <button class="nav-item" onclick="nav('keywords',this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="4"/><path d="M9.5 9.5L14 14"/></svg>Keywords</button>
+      <button class="nav-item" onclick="nav('searchterms',this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="2" rx="1"/><rect x="1" y="7" width="10" height="2" rx="1"/><rect x="1" y="11" width="7" height="2" rx="1"/></svg>Search Terms</button>
+      <button class="nav-item" onclick="nav('portfolios',this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="4" width="14" height="10" rx="1"/><path d="M5 4V3a1 1 0 011-1h4a1 1 0 011 1v1"/></svg>Portfolios</button>
       <div class="nav-section"><div class="nav-label">Automation</div></div>
-      <button class="nav-item" onclick="nav('algorithms',this)">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="8" cy="12" r="2"/><path d="M6 4h2M10 4h0M8 10V6"/></svg>
-        Algorithms
-      </button>
-      <button class="nav-item" onclick="nav('asins',this)">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><path d="M12 9v2m0 2v.5M9 11.5h2m2 0h.5"/></svg>
-        ASINs
-      </button>
-      <button class="nav-item" onclick="nav('dayparting',this)">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l3 2"/></svg>
-        Day Parting
-      </button>
-
+      <button class="nav-item" onclick="nav('algorithms',this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="8" cy="12" r="2"/><path d="M6 4h2M10 4h0M8 10V6"/></svg>Algorithms</button>
+      <button class="nav-item" onclick="nav('asins',this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/></svg>ASINs</button>
+      <button class="nav-item" onclick="nav('dayparting',this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l3 2"/></svg>Day Parting</button>
       <div class="nav-section"><div class="nav-label">Products</div></div>
-      <button class="nav-item" onclick="nav('products',this)">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5l6-3 6 3v6l-6 3-6-3V5z"/></svg>
-        Performance
-      </button>
-      <button class="nav-item" onclick="nav('restock',this)">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="10" width="12" height="4" rx="1"/><path d="M5 10V7m6 3V7M8 7V3m0 0L5.5 5.5M8 3l2.5 2.5"/></svg>
-        Restock Forecast
-      </button>
-
+      <button class="nav-item" onclick="nav('products',this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5l6-3 6 3v6l-6 3-6-3V5z"/></svg>Performance</button>
       <div class="nav-section"><div class="nav-label">Intelligence</div></div>
-      <a class="nav-item" href="/competitor-tracker.html">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="3"/><circle cx="11" cy="10" r="3"/><path d="M8.5 3.5l3-2M3.5 12.5l-2 2"/></svg>
-        Competitors
-      </a>
+      <a class="nav-item" href="/competitor-tracker.html"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="3"/><circle cx="11" cy="10" r="3"/></svg>Competitors</a>
     </nav>
-
     <div class="sidebar-footer">
       <div class="sync-status">
         <div class="sync-dot" id="syncDot"></div>
-        <div class="sync-info">
-          <div class="sync-label" id="syncLabel">Not synced</div>
-          <div class="sync-time" id="syncTime">Click Refresh to load data</div>
-        </div>
+        <div class="sync-info"><div class="sync-label" id="syncLabel">Not synced</div><div class="sync-time" id="syncTime">Click Refresh</div></div>
       </div>
     </div>
   </aside>
-
-  <!-- MAIN -->
   <div class="main">
-    <!-- TOPBAR -->
     <div class="topbar">
       <span class="page-title" id="pageTitle">Dashboard</span>
       <div class="topbar-actions">
         <span id="lastSyncBadge" style="font-size:11.5px;color:var(--text3);font-family:var(--mono)"></span>
-        <button class="btn" id="refreshBtn" onclick="doRefresh()">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 8A6 6 0 1 1 8 2M14 2v4h-4"/></svg>
-          Refresh
+        <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>
         </button>
-        <button class="btn btn-primary" onclick="nav('campaigns',null)">+ New Campaign</button>
+        <button class="btn" id="refreshBtn" onclick="doRefresh()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 8A6 6 0 1 1 8 2M14 2v4h-4"/></svg>Refresh</button>
+        <button class="btn btn-primary" onclick="openCampDrawer()">+ New Campaign</button>
       </div>
     </div>
-
-    <!-- CONTENT -->
     <div class="content">
 
-      <!-- DASHBOARD -->
       <div class="page active" id="page-dashboard">
-        <div class="metric-grid" id="dashMetrics">
-          <div class="metric-card"><div class="metric-label">Live Campaigns</div><div class="metric-value" id="m-sales">—</div><div class="metric-delta delta-flat" id="m-sales-d">Sync to load</div></div>
-          <div class="metric-card"><div class="metric-label">Total Daily Budget</div><div class="metric-value" id="m-spend">—</div><div class="metric-delta delta-flat" id="m-spend-d">Sync to load</div></div>
-          <div class="metric-card"><div class="metric-label">ACOS</div><div class="metric-value" id="m-acos">—</div><div class="metric-delta delta-flat" id="m-acos-d">Requires reporting</div></div>
-          <div class="metric-card"><div class="metric-label">ROAS</div><div class="metric-value" id="m-roas">—</div><div class="metric-delta delta-flat" id="m-roas-d">Requires reporting</div></div>
-          <div class="metric-card"><div class="metric-label">Total Campaigns</div><div class="metric-value" id="m-camps">—</div><div class="metric-delta delta-flat" id="m-camps-d">Sync to load</div></div>
+        <div class="metric-grid">
+          <div class="metric-card"><div class="metric-label">Ad Spend (14d)</div><div class="metric-value" id="m-spend">-</div><div class="metric-delta" id="m-spend-d">Sync to load</div></div>
+          <div class="metric-card"><div class="metric-label">Sales (14d)</div><div class="metric-value" id="m-sales">-</div><div class="metric-delta" id="m-sales-d">Sync to load</div></div>
+          <div class="metric-card"><div class="metric-label">ACOS</div><div class="metric-value" id="m-acos">-</div><div class="metric-delta" id="m-acos-d">Sync to load</div></div>
+          <div class="metric-card"><div class="metric-label">ROAS</div><div class="metric-value" id="m-roas">-</div><div class="metric-delta" id="m-roas-d">Sync to load</div></div>
+          <div class="metric-card"><div class="metric-label">CPC</div><div class="metric-value" id="m-cpc">-</div><div class="metric-delta" id="m-cpc-d">Sync to load</div></div>
+          <div class="metric-card"><div class="metric-label">Campaigns</div><div class="metric-value" id="m-camps">-</div><div class="metric-delta" id="m-camps-d">Sync to load</div></div>
         </div>
-
         <div id="dashRefreshBanner" class="refresh-banner">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v4l2.5 1.5"/></svg>
-          <div>
-            <div class="refresh-banner-text">No data loaded yet</div>
-            <div class="refresh-banner-sub">Click Refresh in the top bar to sync your Amazon Ads data from MarketplaceAdPros</div>
-          </div>
+          <div><div class="refresh-banner-text">No data loaded yet</div><div class="refresh-banner-sub">Click Refresh to sync your Amazon Ads data</div></div>
           <button class="btn btn-primary btn-sm" onclick="doRefresh()">Refresh now</button>
         </div>
-
         <div class="two-col">
           <div class="card">
-            <div class="card-header"><div><div class="card-title">Top Campaigns</div><div class="card-subtitle">By spend</div></div><button class="btn btn-sm" onclick="nav('campaigns',null)">View all →</button></div>
-            <div id="dashCampaigns"><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8L7 3L12 8"/><path d="M7 3V13"/></svg></div><div class="empty-title">No campaigns loaded</div><div class="empty-desc">Click Refresh to sync your campaigns</div></div></div>
+            <div class="card-header"><div><div class="card-title">Top Campaigns</div><div class="card-subtitle">By spend (14d)</div></div><button class="btn btn-sm" onclick="nav('campaigns',null)">View all</button></div>
+            <div id="dashCampaigns"><div class="empty-state"><div class="empty-title">No data</div><div class="empty-desc">Click Refresh</div></div></div>
           </div>
           <div class="card">
-            <div class="card-header"><div><div class="card-title">Top Keywords</div><div class="card-subtitle">By spend</div></div><button class="btn btn-sm" onclick="nav('keywords',null)">View all →</button></div>
-            <div id="dashKeywords"><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="4"/><path d="M9.5 9.5L14 14"/></svg></div><div class="empty-title">No keywords loaded</div><div class="empty-desc">Click Refresh to sync your keywords</div></div></div>
+            <div class="card-header">
+              <div><div class="card-title">Spend vs Sales</div><div class="card-subtitle">Last 30 days</div></div>
+              <div class="chart-legend"><div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div><span style="font-size:11px;color:var(--text2)">Spend</span></div><div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div><span style="font-size:11px;color:var(--text2)">Sales</span></div></div>
+            </div>
+            <div class="chart-area"><div class="chart-bars" id="dashChart"></div><div class="chart-labels" id="dashChartLabels"></div></div>
           </div>
         </div>
       </div>
 
-      <!-- CAMPAIGNS -->
       <div class="page" id="page-campaigns">
         <div class="filter-bar">
           <input class="search-input" placeholder="Search campaigns..." id="campSearch" oninput="filterCampaigns()"/>
           <select class="filter-select" id="campPortfolio" onchange="filterCampaigns()"><option value="">All Portfolios</option></select>
-          <select class="filter-select" id="campType" onchange="filterCampaigns()"><option value="">All Types</option><option>Automatic</option><option>Manual</option><option>Sponsored Brands</option><option>Sponsored Display</option></select>
-          <select class="filter-select" id="campState" onchange="filterCampaigns()"><option value="">All Statuses</option><option>enabled</option><option>paused</option><option>archived</option></select>
-          <button class="btn btn-primary" style="margin-left:auto" onclick="alert('Connect Amazon API to create campaigns')">+ New Campaign</button>
+          <select class="filter-select" id="campType" onchange="filterCampaigns()"><option value="">All Types</option><option>AUTO</option><option>MANUAL</option></select>
+          <select class="filter-select" id="campState" onchange="filterCampaigns()"><option value="">All States</option><option value="ENABLED">Live</option><option value="PAUSED">Paused</option></select>
+          <button class="btn btn-primary" style="margin-left:auto" onclick="openCampDrawer()">+ New Campaign</button>
         </div>
-        <div class="card">
-          <div id="campTableWrap"><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8L7 3L12 8"/><path d="M7 3V13"/></svg></div><div class="empty-title">No campaigns loaded</div><div class="empty-desc">Click Refresh in the top bar to load your real campaign data from Amazon</div><button class="btn btn-primary" style="margin-top:8px" onclick="doRefresh()">Refresh now</button></div></div>
-        </div>
+        <div class="card"><div id="campTableWrap"><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8L7 3L12 8"/><path d="M7 3V13"/></svg></div><div class="empty-title">No campaigns loaded</div><div class="empty-desc">Click Refresh to load your campaign data</div><button class="btn btn-primary" style="margin-top:8px" onclick="doRefresh()">Refresh now</button></div></div></div>
       </div>
 
-      <!-- KEYWORDS -->
       <div class="page" id="page-keywords">
         <div class="filter-bar">
           <input class="search-input" placeholder="Search keywords..." id="kwSearch" oninput="filterKeywords()"/>
-          <select class="filter-select" id="kwMatch" onchange="filterKeywords()"><option value="">All Match Types</option><option>exact</option><option>phrase</option><option>broad</option></select>
-          <select class="filter-select" id="kwState" onchange="filterKeywords()"><option value="">All States</option><option>enabled</option><option>paused</option></select>
+          <select class="filter-select" id="kwPortfolio" onchange="filterKeywords()"><option value="">All Portfolios</option></select>
+          <select class="filter-select" id="kwMatch" onchange="filterKeywords()"><option value="">All Match Types</option><option>EXACT</option><option>PHRASE</option><option>BROAD</option></select>
+          <select class="filter-select" id="kwState" onchange="filterKeywords()"><option value="">All States</option><option value="ENABLED">Enabled</option><option value="PAUSED">Paused</option></select>
+          <select class="filter-select" id="kwAsin" onchange="filterKeywords()"><option value="">All ASINs</option></select>
           <select class="filter-select" id="kwCampaign" onchange="filterKeywords()"><option value="">All Campaigns</option></select>
-          <button class="btn btn-primary" style="margin-left:auto">+ Add Keywords</button>
         </div>
-        <div class="card">
-          <div id="kwTableWrap"><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="4"/><path d="M9.5 9.5L14 14"/></svg></div><div class="empty-title">No keywords loaded</div><div class="empty-desc">Click Refresh to load your keyword data</div><button class="btn btn-primary" style="margin-top:8px" onclick="doRefresh()">Refresh now</button></div></div>
-        </div>
+        <div class="card"><div id="kwTableWrap"><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="4"/><path d="M9.5 9.5L14 14"/></svg></div><div class="empty-title">No keywords loaded</div><div class="empty-desc">Click Refresh to load keyword data</div><button class="btn btn-primary" style="margin-top:8px" onclick="doRefresh()">Refresh now</button></div></div></div>
       </div>
 
-      <!-- SEARCH TERMS -->
       <div class="page" id="page-searchterms">
         <div class="filter-bar">
-          <input class="search-input" placeholder="Filter search terms..."/>
-          <select class="filter-select"><option>All Campaigns</option></select>
-          <select class="filter-select"><option>Last 30 days</option><option>Last 14 days</option><option>Last 7 days</option></select>
+          <input class="search-input" placeholder="Filter search terms..." id="stSearch" oninput="filterSearchTerms()"/>
+          <select class="filter-select" id="stCampaign" onchange="filterSearchTerms()"><option value="">All Campaigns</option></select>
         </div>
-        <div class="card">
-          <div id="stTableWrap"><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="2" rx="1"/><rect x="1" y="7" width="10" height="2" rx="1"/></svg></div><div class="empty-title">No search terms loaded</div><div class="empty-desc">Click Refresh to load search term report data</div><button class="btn btn-primary" style="margin-top:8px" onclick="doRefresh()">Refresh now</button></div></div>
-        </div>
+        <div class="card"><div id="stTableWrap"><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="2" rx="1"/><rect x="1" y="7" width="10" height="2" rx="1"/></svg></div><div class="empty-title">No search terms loaded</div><div class="empty-desc">Click Refresh to load search term data</div><button class="btn btn-primary" style="margin-top:8px" onclick="doRefresh()">Refresh now</button></div></div></div>
       </div>
 
-      <!-- ALGORITHMS -->
+      <div class="page" id="page-portfolios">
+        <div class="section-header"><span class="section-title">Portfolios</span></div>
+        <div id="portfolioGrid"><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="4" width="14" height="10" rx="1"/><path d="M5 4V3a1 1 0 011-1h4a1 1 0 011 1v1"/></svg></div><div class="empty-title">No portfolios loaded</div><div class="empty-desc">Click Refresh to load your portfolios</div><button class="btn btn-primary" style="margin-top:8px" onclick="doRefresh()">Refresh now</button></div></div>
+      </div>
+
       <div class="page" id="page-algorithms">
-        <div class="section-header">
-          <span class="section-title">Automation Algorithms</span>
-          <span style="font-size:12px;color:var(--text3)" id="algoCount">0 of 12 active</span>
-        </div>
+        <div class="section-header"><span class="section-title">Automation Algorithms</span><span style="font-size:12px;color:var(--text3)" id="algoCount">Loading...</span></div>
 
-        <!-- Dynamic Bidding -->
-        <div class="algo-card enabled" id="ac-dynbid">
+        <div class="algo-card" id="ac-dynbid">
           <div class="algo-header" onclick="toggleAlgoCard('ac-dynbid')">
-            <div class="algo-left"><div class="algo-dot on"></div><div><div class="algo-name">Dynamic Bidding</div><div class="algo-desc">Adjust bids dynamically based on keyword ACOS performance.</div></div></div>
-            <div class="algo-right"><button class="toggle on" onclick="event.stopPropagation();toggleAlgo(this)"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
+            <div class="algo-left"><div class="algo-dot" id="dot-ac-dynbid"></div><div><div class="algo-name">Dynamic Bidding</div><div class="algo-desc">Adjust bids based on ACOS performance</div></div></div>
+            <div class="algo-right"><button class="toggle off" id="toggle-ac-dynbid" onclick="event.stopPropagation();toggleAlgo(this,'ac-dynbid')"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
           </div>
           <div class="algo-body">
             <div class="algo-grid">
-              <div class="algo-field"><label class="algo-label">Target ACOS (%)</label><input class="algo-input" type="number" value="25" min="1" max="100"/><span class="algo-hint">Bids adjust toward this ACOS target</span></div>
-              <div class="algo-field"><label class="algo-label">Min Bid ($)</label><input class="algo-input" type="number" value="0.10" min="0.02" step="0.01"/></div>
-              <div class="algo-field"><label class="algo-label">Max Bid ($)</label><input class="algo-input" type="number" value="5.00" step="0.10"/></div>
-              <div class="algo-field"><label class="algo-label">Max Adjustment (%)</label><input class="algo-input" type="number" value="30" min="1" max="100"/><span class="algo-hint">Max % to change a bid per cycle</span></div>
-              <div class="algo-field"><label class="algo-label">Lookback (days)</label><input class="algo-input" type="number" value="14" min="1" max="90"/></div>
-              <div class="algo-field"><label class="algo-label">Strategy</label><select class="algo-select"><option>Dynamic — up and down</option><option>Dynamic — down only</option><option>Fixed bids</option></select></div>
+<div class="algo-field"><label class="algo-label">Target ACOS (%)</label><input class="algo-input" id="f-ac-dynbid-0" type="number" value="25"/></div>
+<div class="algo-field"><label class="algo-label">Min Bid ($)</label><input class="algo-input" id="f-ac-dynbid-1" type="number" value="0.10"/></div>
+<div class="algo-field"><label class="algo-label">Max Bid ($)</label><input class="algo-input" id="f-ac-dynbid-2" type="number" value="5.00"/></div>
+<div class="algo-field"><label class="algo-label">Max Adjustment (%)</label><input class="algo-input" id="f-ac-dynbid-3" type="number" value="30"/></div>
+<div class="algo-field"><label class="algo-label">Lookback (days)</label><input class="algo-input" id="f-ac-dynbid-4" type="number" value="14"/></div>
+<div class="algo-field"><label class="algo-label">Strategy</label><select class="algo-select" id="f-ac-dynbid-5"><option>Dynamic up+down</option><option>Dynamic down only</option><option>Fixed bids</option></select></div>
+
             </div>
-            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-dynbid')">Save settings</button><span class="algo-saved" id="saved-ac-dynbid">✓ Saved</span></div>
+            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-dynbid')">Save</button><span class="algo-saved" id="saved-ac-dynbid">&#10003; Saved</span></div>
           </div>
         </div>
 
-        <!-- Import Algorithm -->
-        <div class="algo-card enabled" id="ac-import">
+        <div class="algo-card" id="ac-import">
           <div class="algo-header" onclick="toggleAlgoCard('ac-import')">
-            <div class="algo-left"><div class="algo-dot on"></div><div><div class="algo-name">Import Algorithm</div><div class="algo-desc">Harvest performing search terms into keyword campaigns.</div></div></div>
-            <div class="algo-right"><button class="toggle on" onclick="event.stopPropagation();toggleAlgo(this)"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
+            <div class="algo-left"><div class="algo-dot" id="dot-ac-import"></div><div><div class="algo-name">Import Algorithm</div><div class="algo-desc">Harvest converting search terms into keyword campaigns</div></div></div>
+            <div class="algo-right"><button class="toggle off" id="toggle-ac-import" onclick="event.stopPropagation();toggleAlgo(this,'ac-import')"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
           </div>
           <div class="algo-body">
             <div class="algo-grid">
-              <div class="algo-field"><label class="algo-label">Max ACOS to Import (%)</label><input class="algo-input" type="number" value="30"/><span class="algo-hint">Only import terms below this ACOS</span></div>
-              <div class="algo-field"><label class="algo-label">Min Clicks</label><input class="algo-input" type="number" value="5" min="1"/></div>
-              <div class="algo-field"><label class="algo-label">Min Orders</label><input class="algo-input" type="number" value="1" min="0"/></div>
-              <div class="algo-field"><label class="algo-label">Lookback (days)</label><input class="algo-input" type="number" value="30"/></div>
-              <div class="algo-field"><label class="algo-label">Import as Match Type</label><select class="algo-select"><option>Exact</option><option>Phrase</option><option>Broad</option></select></div>
-              <div class="algo-field"><label class="algo-label">Starting Bid ($)</label><input class="algo-input" type="number" value="0.75" step="0.01"/></div>
+<div class="algo-field"><label class="algo-label">Max ACOS to Import (%)</label><input class="algo-input" id="f-ac-import-0" type="number" value="30"/></div>
+<div class="algo-field"><label class="algo-label">Min Clicks</label><input class="algo-input" id="f-ac-import-1" type="number" value="5"/></div>
+<div class="algo-field"><label class="algo-label">Min Orders</label><input class="algo-input" id="f-ac-import-2" type="number" value="1"/></div>
+<div class="algo-field"><label class="algo-label">Lookback (days)</label><input class="algo-input" id="f-ac-import-3" type="number" value="30"/></div>
+<div class="algo-field"><label class="algo-label">Import as Match Type</label><select class="algo-select" id="f-ac-import-4"><option>Exact</option><option>Phrase</option><option>Broad</option></select></div>
+<div class="algo-field"><label class="algo-label">Starting Bid ($)</label><input class="algo-input" id="f-ac-import-5" type="number" value="0.75"/></div>
+
             </div>
-            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-import')">Save settings</button><span class="algo-saved" id="saved-ac-import">✓ Saved</span></div>
+            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-import')">Save</button><span class="algo-saved" id="saved-ac-import">&#10003; Saved</span></div>
           </div>
         </div>
 
-        <!-- Negative Algorithm -->
-        <div class="algo-card enabled" id="ac-neg">
+        <div class="algo-card" id="ac-neg">
           <div class="algo-header" onclick="toggleAlgoCard('ac-neg')">
-            <div class="algo-left"><div class="algo-dot on"></div><div><div class="algo-name">Negative Algorithm</div><div class="algo-desc">Auto-negate search terms exceeding ACOS threshold.</div></div></div>
-            <div class="algo-right"><button class="toggle on" onclick="event.stopPropagation();toggleAlgo(this)"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
+            <div class="algo-left"><div class="algo-dot" id="dot-ac-neg"></div><div><div class="algo-name">Negative Algorithm</div><div class="algo-desc">Auto-negate search terms exceeding ACOS threshold</div></div></div>
+            <div class="algo-right"><button class="toggle off" id="toggle-ac-neg" onclick="event.stopPropagation();toggleAlgo(this,'ac-neg')"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
           </div>
           <div class="algo-body">
             <div class="algo-grid">
-              <div class="algo-field"><label class="algo-label">Min ACOS to Negate (%)</label><input class="algo-input" type="number" value="60"/></div>
-              <div class="algo-field"><label class="algo-label">Min Spend ($)</label><input class="algo-input" type="number" value="15" step="0.50"/><span class="algo-hint">Min spend before eligible</span></div>
-              <div class="algo-field"><label class="algo-label">Min Clicks</label><input class="algo-input" type="number" value="10"/></div>
-              <div class="algo-field"><label class="algo-label">Lookback (days)</label><input class="algo-input" type="number" value="30"/></div>
-              <div class="algo-field"><label class="algo-label">Negate as Match Type</label><select class="algo-select"><option>Exact</option><option>Phrase</option></select></div>
-              <div class="algo-field"><label class="algo-label">Negate zero-order terms?</label><select class="algo-select"><option>Yes — after min spend</option><option>No</option></select></div>
+<div class="algo-field"><label class="algo-label">Min ACOS to Negate (%)</label><input class="algo-input" id="f-ac-neg-0" type="number" value="60"/></div>
+<div class="algo-field"><label class="algo-label">Min Spend ($)</label><input class="algo-input" id="f-ac-neg-1" type="number" value="15"/></div>
+<div class="algo-field"><label class="algo-label">Min Clicks</label><input class="algo-input" id="f-ac-neg-2" type="number" value="10"/></div>
+<div class="algo-field"><label class="algo-label">Lookback (days)</label><input class="algo-input" id="f-ac-neg-3" type="number" value="30"/></div>
+<div class="algo-field"><label class="algo-label">Negate as</label><select class="algo-select" id="f-ac-neg-4"><option>Exact</option><option>Phrase</option></select></div>
+<div class="algo-field"><label class="algo-label">Negate zero-order terms</label><select class="algo-select" id="f-ac-neg-5"><option>Yes</option><option>No</option></select></div>
+
             </div>
-            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-neg')">Save settings</button><span class="algo-saved" id="saved-ac-neg">✓ Saved</span></div>
+            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-neg')">Save</button><span class="algo-saved" id="saved-ac-neg">&#10003; Saved</span></div>
           </div>
         </div>
 
-        <!-- Negative Word -->
-        <div class="algo-card enabled" id="ac-negword">
+        <div class="algo-card" id="ac-negword">
           <div class="algo-header" onclick="toggleAlgoCard('ac-negword')">
-            <div class="algo-left"><div class="algo-dot on"></div><div><div class="algo-name">Negative Word Algorithm</div><div class="algo-desc">Negate terms containing words from your bad word list.</div></div></div>
-            <div class="algo-right"><button class="toggle on" onclick="event.stopPropagation();toggleAlgo(this)"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
+            <div class="algo-left"><div class="algo-dot" id="dot-ac-negword"></div><div><div class="algo-name">Negative Word Algorithm</div><div class="algo-desc">Negate terms containing words from your bad word list</div></div></div>
+            <div class="algo-right"><button class="toggle off" id="toggle-ac-negword" onclick="event.stopPropagation();toggleAlgo(this,'ac-negword')"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
           </div>
           <div class="algo-body">
             <div class="algo-grid">
-              <div class="algo-field"><label class="algo-label">Min Spend ($)</label><input class="algo-input" type="number" value="5" step="0.50"/></div>
-              <div class="algo-field"><label class="algo-label">Negate as Match Type</label><select class="algo-select"><option>Exact</option><option>Phrase</option></select></div>
-            </div>
-            <div class="algo-field" style="margin-top:12px"><label class="algo-label">Bad Word List</label><textarea class="algo-textarea" placeholder="One word per line&#10;e.g.&#10;cheap&#10;used&#10;replacement">cheap
+<div class="algo-field"><label class="algo-label">Min Spend ($)</label><input class="algo-input" id="f-ac-negword-0" type="number" value="5"/></div>
+<div class="algo-field"><label class="algo-label">Negate as</label><select class="algo-select" id="f-ac-negword-1"><option>Exact</option><option>Phrase</option></select></div>
+<div class="algo-field"><label class="algo-label">Bad Word List</label><textarea class="algo-textarea" id="f-ac-negword-2">cheap
 used
 walmart</textarea></div>
-            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-negword')">Save settings</button><span class="algo-saved" id="saved-ac-negword">✓ Saved</span></div>
+
+            </div>
+            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-negword')">Save</button><span class="algo-saved" id="saved-ac-negword">&#10003; Saved</span></div>
           </div>
         </div>
 
-        <!-- Dayparting -->
-        <div class="algo-card enabled" id="ac-daypart">
+        <div class="algo-card" id="ac-daypart">
           <div class="algo-header" onclick="toggleAlgoCard('ac-daypart')">
-            <div class="algo-left"><div class="algo-dot on"></div><div><div class="algo-name">Dayparting Algorithm</div><div class="algo-desc">Pause ads during low-converting hours.</div></div></div>
-            <div class="algo-right"><button class="toggle on" onclick="event.stopPropagation();toggleAlgo(this)"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
+            <div class="algo-left"><div class="algo-dot" id="dot-ac-daypart"></div><div><div class="algo-name">Dayparting Algorithm</div><div class="algo-desc">Pause ads during low-converting hours</div></div></div>
+            <div class="algo-right"><button class="toggle off" id="toggle-ac-daypart" onclick="event.stopPropagation();toggleAlgo(this,'ac-daypart')"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
           </div>
           <div class="algo-body">
             <div class="algo-grid">
-              <div class="algo-field"><label class="algo-label">Action During Off-Hours</label><select class="algo-select"><option>Pause campaigns</option><option>Reduce bids by %</option></select></div>
-              <div class="algo-field"><label class="algo-label">Bid Reduction %</label><input class="algo-input" type="number" value="50" min="1" max="99"/><span class="algo-hint">Only if action is "Reduce bids"</span></div>
-              <div class="algo-field"><label class="algo-label">Timezone</label><select class="algo-select"><option>America/New_York (ET)</option><option>America/Los_Angeles (PT)</option><option>Europe/Bucharest (EET)</option><option>Europe/London (GMT)</option></select></div>
+<div class="algo-field"><label class="algo-label">Action</label><select class="algo-select" id="f-ac-daypart-0"><option>Pause campaigns</option><option>Reduce bids by %</option></select></div>
+<div class="algo-field"><label class="algo-label">Bid Reduction %</label><input class="algo-input" id="f-ac-daypart-1" type="number" value="50"/></div>
+<div class="algo-field"><label class="algo-label">Timezone</label><select class="algo-select" id="f-ac-daypart-2"><option>America/New_York (ET)</option><option>America/Los_Angeles (PT)</option><option>Europe/Bucharest (EET)</option></select></div>
+
             </div>
-            <div style="margin-top:14px"><label class="algo-label" style="display:block;margin-bottom:8px">Active Hours (click to toggle — blue = ads ON)</label><div class="hour-grid" id="hourGrid"></div></div>
-            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-daypart')">Save settings</button><span class="algo-saved" id="saved-ac-daypart">✓ Saved</span></div>
+            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-daypart')">Save</button><span class="algo-saved" id="saved-ac-daypart">&#10003; Saved</span></div>
           </div>
         </div>
 
-        <!-- Status Algorithm -->
+        <div class="algo-card" id="ac-placement">
+          <div class="algo-header" onclick="toggleAlgoCard('ac-placement')">
+            <div class="algo-left"><div class="algo-dot" id="dot-ac-placement"></div><div><div class="algo-name">Placement Algorithm</div><div class="algo-desc">Adjust Top of Search and Product Pages by performance</div></div></div>
+            <div class="algo-right"><button class="toggle off" id="toggle-ac-placement" onclick="event.stopPropagation();toggleAlgo(this,'ac-placement')"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
+          </div>
+          <div class="algo-body">
+            <div class="algo-grid">
+<div class="algo-field"><label class="algo-label">TOS Target ACOS (%)</label><input class="algo-input" id="f-ac-placement-0" type="number" value="20"/></div>
+<div class="algo-field"><label class="algo-label">TOS Max Adjustment (%)</label><input class="algo-input" id="f-ac-placement-1" type="number" value="50"/></div>
+<div class="algo-field"><label class="algo-label">PP Target ACOS (%)</label><input class="algo-input" id="f-ac-placement-2" type="number" value="35"/></div>
+<div class="algo-field"><label class="algo-label">PP Max Adjustment (%)</label><input class="algo-input" id="f-ac-placement-3" type="number" value="30"/></div>
+
+            </div>
+            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-placement')">Save</button><span class="algo-saved" id="saved-ac-placement">&#10003; Saved</span></div>
+          </div>
+        </div>
+
         <div class="algo-card" id="ac-status">
           <div class="algo-header" onclick="toggleAlgoCard('ac-status')">
-            <div class="algo-left"><div class="algo-dot"></div><div><div class="algo-name">Status Algorithm</div><div class="algo-desc">Auto-pause or enable campaigns based on performance.</div></div></div>
-            <div class="algo-right"><button class="toggle off" onclick="event.stopPropagation();toggleAlgo(this)"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
+            <div class="algo-left"><div class="algo-dot" id="dot-ac-status"></div><div><div class="algo-name">Status Algorithm</div><div class="algo-desc">Auto-pause/enable campaigns based on performance</div></div></div>
+            <div class="algo-right"><button class="toggle off" id="toggle-ac-status" onclick="event.stopPropagation();toggleAlgo(this,'ac-status')"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
           </div>
           <div class="algo-body">
-            <div style="font-size:11.5px;color:var(--text2);background:var(--amber-light);border:1px solid #fcd34d;border-radius:6px;padding:8px 12px;margin-top:14px">Pause condition — if ALL true, campaign is paused</div>
             <div class="algo-grid">
-              <div class="algo-field"><label class="algo-label">ACOS exceeds (%)</label><input class="algo-input" type="number" value="70"/></div>
-              <div class="algo-field"><label class="algo-label">AND Spend exceeds ($)</label><input class="algo-input" type="number" value="20"/></div>
-              <div class="algo-field"><label class="algo-label">AND Orders equals</label><input class="algo-input" type="number" value="0"/></div>
-              <div class="algo-field"><label class="algo-label">Lookback (days)</label><input class="algo-input" type="number" value="7"/></div>
+<div class="algo-field"><label class="algo-label">ACOS exceeds (%)</label><input class="algo-input" id="f-ac-status-0" type="number" value="70"/></div>
+<div class="algo-field"><label class="algo-label">AND Spend ($)</label><input class="algo-input" id="f-ac-status-1" type="number" value="20"/></div>
+<div class="algo-field"><label class="algo-label">AND Orders = 0</label><input class="algo-input" id="f-ac-status-2" type="number" value="0"/></div>
+<div class="algo-field"><label class="algo-label">Lookback (days)</label><input class="algo-input" id="f-ac-status-3" type="number" value="7"/></div>
+<div class="algo-field"><label class="algo-label">Re-enable: ACOS below (%)</label><input class="algo-input" id="f-ac-status-4" type="number" value="40"/></div>
+<div class="algo-field"><label class="algo-label">After (days paused)</label><input class="algo-input" id="f-ac-status-5" type="number" value="3"/></div>
+
             </div>
-            <div style="font-size:11.5px;color:var(--text2);background:var(--green-light);border:1px solid #86efac;border-radius:6px;padding:8px 12px;margin-top:12px">Enable condition — re-enable when</div>
-            <div class="algo-grid">
-              <div class="algo-field"><label class="algo-label">ACOS drops below (%)</label><input class="algo-input" type="number" value="40"/></div>
-              <div class="algo-field"><label class="algo-label">Re-enable after (days paused)</label><input class="algo-input" type="number" value="3"/></div>
-            </div>
-            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-status')">Save settings</button><span class="algo-saved" id="saved-ac-status">✓ Saved</span></div>
+            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-status')">Save</button><span class="algo-saved" id="saved-ac-status">&#10003; Saved</span></div>
           </div>
         </div>
 
-        <!-- Placement Algorithm -->
-        <div class="algo-card enabled" id="ac-placement">
-          <div class="algo-header" onclick="toggleAlgoCard('ac-placement')">
-            <div class="algo-left"><div class="algo-dot on"></div><div><div class="algo-name">Placement Algorithm</div><div class="algo-desc">Adjust Top of Search % and Product Pages % by performance.</div></div></div>
-            <div class="algo-right"><button class="toggle on" onclick="event.stopPropagation();toggleAlgo(this)"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
-          </div>
-          <div class="algo-body">
-            <div style="font-size:11.5px;font-weight:500;color:var(--text2);margin-top:14px;margin-bottom:4px">Top of Search</div>
-            <div class="algo-grid">
-              <div class="algo-field"><label class="algo-label">Target ACOS (%)</label><input class="algo-input" type="number" value="20"/></div>
-              <div class="algo-field"><label class="algo-label">Max Adjustment (%)</label><input class="algo-input" type="number" value="50"/></div>
-            </div>
-            <div style="font-size:11.5px;font-weight:500;color:var(--text2);margin-top:12px;margin-bottom:4px">Product Pages</div>
-            <div class="algo-grid">
-              <div class="algo-field"><label class="algo-label">Target ACOS (%)</label><input class="algo-input" type="number" value="35"/></div>
-              <div class="algo-field"><label class="algo-label">Max Adjustment (%)</label><input class="algo-input" type="number" value="30"/></div>
-              <div class="algo-field"><label class="algo-label">Min Clicks to Adjust</label><input class="algo-input" type="number" value="20"/></div>
-            </div>
-            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-placement')">Save settings</button><span class="algo-saved" id="saved-ac-placement">✓ Saved</span></div>
-          </div>
-        </div>
-
-        <!-- Blacklist -->
         <div class="algo-card" id="ac-blacklist">
           <div class="algo-header" onclick="toggleAlgoCard('ac-blacklist')">
-            <div class="algo-left"><div class="algo-dot"></div><div><div class="algo-name">Blacklist</div><div class="algo-desc">Auto-negate a global list of keywords across all campaigns.</div></div></div>
-            <div class="algo-right"><button class="toggle off" onclick="event.stopPropagation();toggleAlgo(this)"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
+            <div class="algo-left"><div class="algo-dot" id="dot-ac-blacklist"></div><div><div class="algo-name">Blacklist</div><div class="algo-desc">Globally negate keywords across all campaigns</div></div></div>
+            <div class="algo-right"><button class="toggle off" id="toggle-ac-blacklist" onclick="event.stopPropagation();toggleAlgo(this,'ac-blacklist')"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
           </div>
           <div class="algo-body">
             <div class="algo-grid">
-              <div class="algo-field"><label class="algo-label">Negate as Match Type</label><select class="algo-select"><option>Exact</option><option>Phrase</option><option>Both</option></select></div>
-              <div class="algo-field"><label class="algo-label">Apply To</label><select class="algo-select"><option>All campaigns</option><option>Selected campaigns only</option></select></div>
+<div class="algo-field"><label class="algo-label">Negate as</label><select class="algo-select" id="f-ac-blacklist-0"><option>Exact</option><option>Phrase</option><option>Both</option></select></div>
+<div class="algo-field"><label class="algo-label">Keywords</label><textarea class="algo-textarea" id="f-ac-blacklist-1"></textarea></div>
+
             </div>
-            <div class="algo-field" style="margin-top:12px"><label class="algo-label">Blacklisted Keywords</label><textarea class="algo-textarea" placeholder="One keyword per line"></textarea></div>
-            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-blacklist')">Save settings</button><span class="algo-saved" id="saved-ac-blacklist">✓ Saved</span></div>
+            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-blacklist')">Save</button><span class="algo-saved" id="saved-ac-blacklist">&#10003; Saved</span></div>
           </div>
         </div>
 
-        <!-- Whitelist -->
         <div class="algo-card" id="ac-whitelist">
           <div class="algo-header" onclick="toggleAlgoCard('ac-whitelist')">
-            <div class="algo-left"><div class="algo-dot"></div><div><div class="algo-name">Whitelist</div><div class="algo-desc">Protect keywords from being negated by any algorithm.</div></div></div>
-            <div class="algo-right"><button class="toggle off" onclick="event.stopPropagation();toggleAlgo(this)"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
+            <div class="algo-left"><div class="algo-dot" id="dot-ac-whitelist"></div><div><div class="algo-name">Whitelist</div><div class="algo-desc">Protect keywords from being negated</div></div></div>
+            <div class="algo-right"><button class="toggle off" id="toggle-ac-whitelist" onclick="event.stopPropagation();toggleAlgo(this,'ac-whitelist')"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
           </div>
           <div class="algo-body">
-            <div class="algo-field" style="padding-top:14px"><label class="algo-label">Protected Keywords</label><textarea class="algo-textarea" placeholder="One keyword per line — these will never be negated"></textarea><span class="algo-hint">These keywords are immune to all negating algorithms</span></div>
-            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-whitelist')">Save settings</button><span class="algo-saved" id="saved-ac-whitelist">✓ Saved</span></div>
+            <div class="algo-grid">
+<div class="algo-field"><label class="algo-label">Protected Keywords</label><textarea class="algo-textarea" id="f-ac-whitelist-0"></textarea></div>
+
+            </div>
+            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-whitelist')">Save</button><span class="algo-saved" id="saved-ac-whitelist">&#10003; Saved</span></div>
           </div>
         </div>
 
-        <!-- Revive -->
-        <div class="algo-card enabled" id="ac-revive">
+        <div class="algo-card" id="ac-revive">
           <div class="algo-header" onclick="toggleAlgoCard('ac-revive')">
-            <div class="algo-left"><div class="algo-dot on"></div><div><div class="algo-name">Revive Algorithm</div><div class="algo-desc">Raise bids on dormant keywords with strong history.</div></div></div>
-            <div class="algo-right"><button class="toggle on" onclick="event.stopPropagation();toggleAlgo(this)"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
+            <div class="algo-left"><div class="algo-dot" id="dot-ac-revive"></div><div><div class="algo-name">Revive Algorithm</div><div class="algo-desc">Raise bids on dormant keywords with strong history</div></div></div>
+            <div class="algo-right"><button class="toggle off" id="toggle-ac-revive" onclick="event.stopPropagation();toggleAlgo(this,'ac-revive')"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
           </div>
           <div class="algo-body">
             <div class="algo-grid">
-              <div class="algo-field"><label class="algo-label">Dormant After (days no clicks)</label><input class="algo-input" type="number" value="14"/></div>
-              <div class="algo-field"><label class="algo-label">Historical ACOS Threshold (%)</label><input class="algo-input" type="number" value="35"/></div>
-              <div class="algo-field"><label class="algo-label">Min Historical Orders</label><input class="algo-input" type="number" value="2"/></div>
-              <div class="algo-field"><label class="algo-label">Revive Bid ($)</label><input class="algo-input" type="number" value="0.50" step="0.01"/></div>
-              <div class="algo-field"><label class="algo-label">Revive Attempt Limit</label><input class="algo-input" type="number" value="2"/></div>
+<div class="algo-field"><label class="algo-label">Dormant After (days)</label><input class="algo-input" id="f-ac-revive-0" type="number" value="14"/></div>
+<div class="algo-field"><label class="algo-label">Historical ACOS (%)</label><input class="algo-input" id="f-ac-revive-1" type="number" value="35"/></div>
+<div class="algo-field"><label class="algo-label">Min Historical Orders</label><input class="algo-input" id="f-ac-revive-2" type="number" value="2"/></div>
+<div class="algo-field"><label class="algo-label">Revive Bid ($)</label><input class="algo-input" id="f-ac-revive-3" type="number" value="0.50"/></div>
+<div class="algo-field"><label class="algo-label">Attempt Limit</label><input class="algo-input" id="f-ac-revive-4" type="number" value="2"/></div>
+
             </div>
-            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-revive')">Save settings</button><span class="algo-saved" id="saved-ac-revive">✓ Saved</span></div>
+            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-revive')">Save</button><span class="algo-saved" id="saved-ac-revive">&#10003; Saved</span></div>
           </div>
         </div>
 
-        <!-- Daily Budget -->
-        <div class="algo-card enabled" id="ac-budget">
+        <div class="algo-card" id="ac-budget">
           <div class="algo-header" onclick="toggleAlgoCard('ac-budget')">
-            <div class="algo-left"><div class="algo-dot on"></div><div><div class="algo-name">Daily Budget Algorithm</div><div class="algo-desc">Adjust daily budgets by day of week or performance.</div></div></div>
-            <div class="algo-right"><button class="toggle on" onclick="event.stopPropagation();toggleAlgo(this)"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
+            <div class="algo-left"><div class="algo-dot" id="dot-ac-budget"></div><div><div class="algo-name">Daily Budget Algorithm</div><div class="algo-desc">Adjust budgets by day of week</div></div></div>
+            <div class="algo-right"><button class="toggle off" id="toggle-ac-budget" onclick="event.stopPropagation();toggleAlgo(this,'ac-budget')"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
           </div>
           <div class="algo-body">
             <div class="algo-grid">
-              <div class="algo-field"><label class="algo-label">Base Daily Budget ($)</label><input class="algo-input" type="number" value="50"/><span class="algo-hint">Multipliers are applied to this</span></div>
+<div class="algo-field"><label class="algo-label">Base Daily Budget ($)</label><input class="algo-input" id="f-ac-budget-0" type="number" value="50"/></div>
+<div class="algo-field"><label class="algo-label">Mon</label><input class="algo-input" id="f-ac-budget-1" type="number" value="1.0"/></div>
+<div class="algo-field"><label class="algo-label">Tue</label><input class="algo-input" id="f-ac-budget-2" type="number" value="1.0"/></div>
+<div class="algo-field"><label class="algo-label">Wed</label><input class="algo-input" id="f-ac-budget-3" type="number" value="1.0"/></div>
+<div class="algo-field"><label class="algo-label">Thu</label><input class="algo-input" id="f-ac-budget-4" type="number" value="1.2"/></div>
+<div class="algo-field"><label class="algo-label">Fri</label><input class="algo-input" id="f-ac-budget-5" type="number" value="1.5"/></div>
+<div class="algo-field"><label class="algo-label">Sat</label><input class="algo-input" id="f-ac-budget-6" type="number" value="1.8"/></div>
+<div class="algo-field"><label class="algo-label">Sun</label><input class="algo-input" id="f-ac-budget-7" type="number" value="1.5"/></div>
+
             </div>
-            <div style="padding-top:14px"><label class="algo-label" style="display:block;margin-bottom:10px">Budget Multiplier by Day</label>
-            <div class="day-budget-grid">
-              <div class="day-bud-item"><div class="day-label">Mon</div><input class="algo-input" type="number" value="1.0" min="0.1" max="5" step="0.1"/></div>
-              <div class="day-bud-item"><div class="day-label">Tue</div><input class="algo-input" type="number" value="1.0" min="0.1" max="5" step="0.1"/></div>
-              <div class="day-bud-item"><div class="day-label">Wed</div><input class="algo-input" type="number" value="1.0" min="0.1" max="5" step="0.1"/></div>
-              <div class="day-bud-item"><div class="day-label">Thu</div><input class="algo-input" type="number" value="1.2" min="0.1" max="5" step="0.1"/></div>
-              <div class="day-bud-item"><div class="day-label">Fri</div><input class="algo-input" type="number" value="1.5" min="0.1" max="5" step="0.1"/></div>
-              <div class="day-bud-item"><div class="day-label">Sat</div><input class="algo-input" type="number" value="1.8" min="0.1" max="5" step="0.1"/></div>
-              <div class="day-bud-item"><div class="day-label">Sun</div><input class="algo-input" type="number" value="1.5" min="0.1" max="5" step="0.1"/></div>
-            </div></div>
-            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-budget')">Save settings</button><span class="algo-saved" id="saved-ac-budget">✓ Saved</span></div>
+            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-budget')">Save</button><span class="algo-saved" id="saved-ac-budget">&#10003; Saved</span></div>
           </div>
         </div>
 
-        <!-- Default Bid -->
         <div class="algo-card" id="ac-defbid">
           <div class="algo-header" onclick="toggleAlgoCard('ac-defbid')">
-            <div class="algo-left"><div class="algo-dot"></div><div><div class="algo-name">Default Bid Algorithm</div><div class="algo-desc">Optimize default bids for automatic campaigns.</div></div></div>
-            <div class="algo-right"><button class="toggle off" onclick="event.stopPropagation();toggleAlgo(this)"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
+            <div class="algo-left"><div class="algo-dot" id="dot-ac-defbid"></div><div><div class="algo-name">Default Bid Algorithm</div><div class="algo-desc">Optimize default bids for automatic campaigns</div></div></div>
+            <div class="algo-right"><button class="toggle off" id="toggle-ac-defbid" onclick="event.stopPropagation();toggleAlgo(this,'ac-defbid')"></button><svg class="algo-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></div>
           </div>
           <div class="algo-body">
             <div class="algo-grid">
-              <div class="algo-field"><label class="algo-label">Target ACOS (%)</label><input class="algo-input" type="number" value="30"/></div>
-              <div class="algo-field"><label class="algo-label">Min Default Bid ($)</label><input class="algo-input" type="number" value="0.25" step="0.01"/></div>
-              <div class="algo-field"><label class="algo-label">Max Default Bid ($)</label><input class="algo-input" type="number" value="3.00" step="0.10"/></div>
-              <div class="algo-field"><label class="algo-label">Max Adjustment per Cycle (%)</label><input class="algo-input" type="number" value="20"/></div>
-              <div class="algo-field"><label class="algo-label">Lookback (days)</label><input class="algo-input" type="number" value="14"/></div>
+<div class="algo-field"><label class="algo-label">Target ACOS (%)</label><input class="algo-input" id="f-ac-defbid-0" type="number" value="30"/></div>
+<div class="algo-field"><label class="algo-label">Min Default Bid ($)</label><input class="algo-input" id="f-ac-defbid-1" type="number" value="0.25"/></div>
+<div class="algo-field"><label class="algo-label">Max Default Bid ($)</label><input class="algo-input" id="f-ac-defbid-2" type="number" value="3.00"/></div>
+<div class="algo-field"><label class="algo-label">Max Adjustment (%)</label><input class="algo-input" id="f-ac-defbid-3" type="number" value="20"/></div>
+<div class="algo-field"><label class="algo-label">Lookback (days)</label><input class="algo-input" id="f-ac-defbid-4" type="number" value="14"/></div>
+
             </div>
-            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-defbid')">Save settings</button><span class="algo-saved" id="saved-ac-defbid">✓ Saved</span></div>
+            <div class="algo-actions"><button class="btn btn-primary btn-sm" onclick="saveAlgo('ac-defbid')">Save</button><span class="algo-saved" id="saved-ac-defbid">&#10003; Saved</span></div>
           </div>
         </div>
+
       </div>
 
-      <!-- ASINS -->
       <div class="page" id="page-asins">
-        <div class="filter-bar">
-          <input class="search-input" placeholder="Search ASINs..."/>
-          <select class="filter-select"><option>All ASINs</option><option>Automated</option><option>Not Automated</option></select>
-        </div>
-        <div id="asinGrid"><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/></svg></div><div class="empty-title">No ASINs loaded</div><div class="empty-desc">Click Refresh to load your product ad data</div><button class="btn btn-primary" style="margin-top:8px" onclick="doRefresh()">Refresh now</button></div></div>
+        <div class="filter-bar"><input class="search-input" placeholder="Search ASINs..." id="asinSearch" oninput="filterAsins()"/></div>
+        <div id="asinGrid"><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/></svg></div><div class="empty-title">No ASINs loaded</div><div class="empty-desc">Click Refresh to load product ad data</div><button class="btn btn-primary" style="margin-top:8px" onclick="doRefresh()">Refresh now</button></div></div>
       </div>
 
-      <!-- DAY PARTING -->
       <div class="page" id="page-dayparting">
         <div class="card">
-          <div class="card-header"><div class="card-title">Hourly Performance Heatmap</div><div style="display:flex;gap:16px;font-size:11.5px;align-items:center;color:var(--text3)"><span>Low ACOS</span><div style="display:flex;gap:2px"><div style="width:12px;height:12px;border-radius:2px;background:var(--green)"></div><div style="width:12px;height:12px;border-radius:2px;background:var(--amber)"></div><div style="width:12px;height:12px;border-radius:2px;background:var(--red)"></div></div><span>High ACOS</span></div></div>
+          <div class="card-header"><div class="card-title">Hourly Performance Heatmap</div></div>
           <div style="padding:20px;overflow-x:auto" id="heatmapContainer"></div>
         </div>
         <div class="card">
-          <div class="card-header"><div class="card-title">Day Parting Rules</div><button class="btn btn-primary btn-sm">+ Add Rule</button></div>
-          <div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l3 2"/></svg></div><div class="empty-title">No rules configured</div><div class="empty-desc">Add a rule to schedule when your ads run</div></div>
+          <div class="card-header"><div class="card-title">Budget Rules (Dayparting)</div><button class="btn btn-primary btn-sm">+ Add Rule</button></div>
+          <div id="budgetRulesWrap"><div class="empty-state"><div class="empty-title">No budget rules</div><div class="empty-desc">Add a rule to schedule budget increases or ad pausing</div></div></div>
         </div>
       </div>
 
-      <!-- ANALYTICS -->
       <div class="page" id="page-analytics">
         <div class="tabs">
-          <div class="tab active" onclick="switchTab(this,'tab-organic')">Organic vs PPC</div>
+          <div class="tab active" onclick="switchTab(this,'tab-organic')">Performance</div>
           <div class="tab" onclick="switchTab(this,'tab-trends')">Trends</div>
-          <div class="tab" onclick="switchTab(this,'tab-searchterms-tab')">Search Terms</div>
-          <div class="tab" onclick="switchTab(this,'tab-competing')">Competing Keywords</div>
+          <div class="tab" onclick="switchTab(this,'tab-st')">Search Terms</div>
         </div>
         <div id="tab-organic">
-          <div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,12 5,7 8,9 12,4 15,6"/></svg></div><div class="empty-title">No analytics data</div><div class="empty-desc">Click Refresh to load performance data</div><button class="btn btn-primary" style="margin-top:8px" onclick="doRefresh()">Refresh now</button></div>
+          <div class="metric-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+            <div class="metric-card"><div class="metric-label">Total Spend (14d)</div><div class="metric-value" id="an-spend">-</div></div>
+            <div class="metric-card"><div class="metric-label">Total Sales (14d)</div><div class="metric-value" id="an-sales">-</div></div>
+            <div class="metric-card"><div class="metric-label">ACOS</div><div class="metric-value" id="an-acos">-</div></div>
+            <div class="metric-card"><div class="metric-label">ROAS</div><div class="metric-value" id="an-roas">-</div></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Campaign Performance (14d)</div></div>
+            <div id="analyticsTableWrap"><div class="empty-state"><div class="empty-title">No analytics data</div><div class="empty-desc">Click Refresh to load performance data</div><button class="btn btn-primary" style="margin-top:8px" onclick="doRefresh()">Refresh now</button></div></div>
+          </div>
         </div>
-        <div id="tab-trends" style="display:none"><div class="empty-state"><div class="empty-title">No trend data</div><div class="empty-desc">Click Refresh to load</div></div></div>
-        <div id="tab-searchterms-tab" style="display:none"><div class="empty-state"><div class="empty-title">No search term data</div><div class="empty-desc">Click Refresh to load</div></div></div>
-        <div id="tab-competing" style="display:none"><div class="empty-state"><div class="empty-title">No keyword data</div><div class="empty-desc">Click Refresh to load</div></div></div>
-      </div>
-
-      <!-- PRODUCTS -->
-      <div class="page" id="page-products">
-        <div class="card">
-          <div class="card-header"><div><div class="card-title">Product Performance</div><div class="card-subtitle">Per-ASIN sales, spend, and profit</div></div><select class="filter-select"><option>Last 30 days</option><option>Last 14 days</option><option>Last 7 days</option></select></div>
-          <div id="productsTableWrap"><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5l6-3 6 3v6l-6 3-6-3V5z"/></svg></div><div class="empty-title">No product data</div><div class="empty-desc">Click Refresh to load per-ASIN performance</div><button class="btn btn-primary" style="margin-top:8px" onclick="doRefresh()">Refresh now</button></div></div>
+        <div id="tab-trends" style="display:none">
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">Daily Spend vs Sales (30 days)</div></div>
+              <div class="chart-legend"><div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div><span style="font-size:11px;color:var(--text2)">Spend</span></div><div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div><span style="font-size:11px;color:var(--text2)">Sales</span></div></div>
+            </div>
+            <div class="chart-area"><div class="chart-bars" id="trendChart" style="height:160px"></div><div class="chart-labels" id="trendChartLabels"></div></div>
+          </div>
         </div>
-      </div>
-
-      <!-- RESTOCK -->
-      <div class="page" id="page-restock">
-        <div class="card">
-          <div class="card-header"><div><div class="card-title">Restock Forecast</div><div class="card-subtitle">Based on current sales velocity</div></div></div>
-          <div class="empty-state">
-            <div class="empty-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="10" width="12" height="4" rx="1"/><path d="M5 10V7m6 3V7M8 7V3"/></svg></div>
-            <div class="empty-title">Restock data not available via MAP</div>
-            <div class="empty-desc">MarketplaceAdPros provides advertising data only. Restock forecasting requires inventory data from Seller Central. Connect Seller Central in MAP to enable this.</div>
+        <div id="tab-st" style="display:none">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Top Search Terms (14d)</div></div>
+            <div id="analyticsStWrap"><div class="empty-state"><div class="empty-title">No search term data</div><div class="empty-desc">Click Refresh to load</div></div></div>
           </div>
         </div>
       </div>
 
-    </div><!-- end content -->
-  </div><!-- end main -->
-</div><!-- end app -->
+      <div class="page" id="page-products">
+        <div class="card">
+          <div class="card-header"><div><div class="card-title">Product Performance (14d)</div><div class="card-subtitle">Per-ASIN spend, sales, ACOS, CPC, orders</div></div></div>
+          <div id="productsTableWrap"><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5l6-3 6 3v6l-6 3-6-3V5z"/></svg></div><div class="empty-title">No product data</div><div class="empty-desc">Click Refresh to load per-ASIN performance data</div><button class="btn btn-primary" style="margin-top:8px" onclick="doRefresh()">Refresh now</button></div></div>
+        </div>
+      </div>
 
+    </div>
+  </div>
+</div>
 <script>
 // ================================================================
-// AdScale — Frontend
+// AdScale Frontend
 // ================================================================
 
-const API = {
-  async get(url) {
-    const r = await fetch(url, { credentials: 'include' });
-    if (r.status === 401) { throw new Error('Not authenticated'); }
-    return r.json();
-  },
-  async post(url, body) {
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) });
-    if (r.status === 401) { throw new Error('Not authenticated'); }
-    return r.json();
-  },
-  async put(url, body) {
-    const r = await fetch(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) });
-    return r.json();
-  },
+function toggleTheme(){
+  const html=document.documentElement;
+  const next=html.getAttribute("data-theme")==="light"?"dark":"light";
+  html.setAttribute("data-theme",next);
+  localStorage.setItem("adscale-theme",next);
+  try{API.post("/api/settings",{key:"theme",value:next});}catch(e){}
+}
+function applyTheme(t){document.documentElement.setAttribute("data-theme",t||"light");}
+
+const API={
+  async get(url){const r=await fetch(url,{credentials:"include"});if(r.status===401)throw new Error("Not authenticated");return r.json();},
+  async post(url,body){const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},credentials:"include",body:JSON.stringify(body)});if(r.status===401)throw new Error("Not authenticated");return r.json();},
+  async put(url,body){const r=await fetch(url,{method:"PUT",headers:{"Content-Type":"application/json"},credentials:"include",body:JSON.stringify(body)});return r.json();}
 };
 
-// ── CACHE ──
-const store = { campaigns: [], keywords: [], portfolios: [], searchTerms: [], productAds: [], performanceMap: {}, kwPerformance: [] };
+const store={campaigns:[],keywords:[],portfolios:[],searchTerms:[],productAds:[],adGroups:[],analytics:[],perfCampaigns:[],perfKeywords:[],perfAsins:[]};
 
-// ── LOGIN ──
-function showLogin() {
-  document.getElementById('loginScreen').style.display = 'flex';
-  document.getElementById('appShell').style.display = 'none';
-}
-
-async function doLogin() {
-  const pw = document.getElementById('loginPw').value;
-  const err = document.getElementById('loginErr');
-  const btn = document.querySelector('.login-btn');
-  if (!pw) { err.style.display = 'block'; err.textContent = 'Please enter your password.'; return; }
-  btn.textContent = 'Signing in...'; btn.style.opacity = '0.7';
-  try {
-    const res = await fetch('/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ password: pw }) });
-    const data = await res.json();
-    if (data.success) {
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('appShell').style.display = 'flex';
-      // Directly load data after login — skip auth/status re-check
-      try {
-        const st = await fetch('/auth/status', { credentials: 'include' });
-        const stData = await st.json();
+async function doLogin(){
+  const pw=document.getElementById("loginPw").value;
+  const err=document.getElementById("loginErr");
+  const btn=document.querySelector(".login-btn");
+  if(!pw){err.style.display="block";err.textContent="Please enter your password.";return;}
+  btn.textContent="Signing in...";btn.style.opacity="0.7";
+  try{
+    const res=await fetch("/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"include",body:JSON.stringify({password:pw})});
+    const data=await res.json();
+    if(data.success){
+      document.getElementById("loginScreen").style.display="none";
+      document.getElementById("appShell").style.display="flex";
+      try{
+        const st=await fetch("/auth/status",{credentials:"include"});
+        const stData=await st.json();
         updateSyncStatus(stData.lastSync);
-        if (stData.lastSync) await loadAllData();
-      } catch(e) { console.warn('Post-login init error:', e); }
-    } else {
-      err.style.display = 'block'; err.textContent = data.error || 'Incorrect password.';
-      btn.textContent = 'Sign in'; btn.style.opacity = '1';
+        await loadSettings();
+        if(stData.lastSync)await loadAllData();
+      }catch(e){console.warn("Post-login:",e);}
+    }else{
+      err.style.display="block";err.textContent=data.error||"Incorrect password.";
+      btn.textContent="Sign in";btn.style.opacity="1";
     }
-  } catch(e) {
-    err.style.display = 'block'; err.textContent = 'Server unreachable.';
-    btn.textContent = 'Sign in'; btn.style.opacity = '1';
+  }catch(e){err.style.display="block";err.textContent="Server unreachable.";btn.textContent="Sign in";btn.style.opacity="1";}
+}
+
+async function loadSettings(){
+  try{
+    const settings=await API.get("/api/settings");
+    if(settings.theme)applyTheme(settings.theme);
+    const algos=await API.get("/api/algorithms");
+    if(algos&&algos.length>0)applyAlgorithmSettings(algos);
+  }catch(e){console.warn("loadSettings:",e);}
+}
+
+async function doRefresh(){
+  const btn=document.getElementById("refreshBtn");
+  const dot=document.getElementById("syncDot");
+  const label=document.getElementById("syncLabel");
+  const time=document.getElementById("syncTime");
+  btn.classList.add("loading");btn.innerHTML="&nbsp;Syncing...";
+  dot.className="sync-dot syncing";label.textContent="Syncing...";time.textContent="Fetching from MAP...";
+  try{
+    const result=await API.post("/api/sync",{});
+    if(result.success){updateSyncStatus(result.timestamp);await loadAllData();label.textContent="Synced";}
+    else{label.textContent="Sync failed";time.textContent=result.error||"Check logs";dot.className="sync-dot";}
+  }catch(e){label.textContent="Error";time.textContent=e.message;dot.className="sync-dot";}
+  btn.classList.remove("loading");
+  btn.innerHTML='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><path d="M14 8A6 6 0 1 1 8 2M14 2v4h-4"/></svg> Refresh';
+}
+
+function updateSyncStatus(timestamp){
+  const dot=document.getElementById("syncDot"),label=document.getElementById("syncLabel");
+  const time=document.getElementById("syncTime"),badge=document.getElementById("lastSyncBadge");
+  if(timestamp){
+    const d=new Date(timestamp);
+    const str=d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
+    dot.className="sync-dot connected";label.textContent="Synced";time.textContent=str;badge.textContent="Last sync: "+str;
+    const banner=document.getElementById("dashRefreshBanner");
+    if(banner)banner.style.display="none";
   }
 }
 
-// ── INIT ──
-async function initApp() {
-  try {
-    const status = await API.get('/auth/status');
-    if (!status.loggedIn) { showLogin(); return; }
-    updateSyncStatus(status.lastSync);
-    // Check if data exists in cache
-    if (status.lastSync) {
-      await loadAllData();
-    }
-  } catch(e) { console.warn('Init error:', e.message); }
-}
-
-// ── SYNC (REFRESH) ──
-async function doRefresh() {
-  const btn = document.getElementById('refreshBtn');
-  const dot = document.getElementById('syncDot');
-  const label = document.getElementById('syncLabel');
-  const time = document.getElementById('syncTime');
-  btn.classList.add('loading'); btn.textContent = '  Syncing...';
-  dot.className = 'sync-dot syncing';
-  label.textContent = 'Syncing...';
-  time.textContent = 'Fetching from MarketplaceAdPros';
-  try {
-    const result = await API.post('/api/sync', {});
-    if (result.success) {
-      updateSyncStatus(result.timestamp);
-      await loadAllData();
-      label.textContent = 'Synced';
-    } else {
-      label.textContent = 'Sync failed';
-      time.textContent = result.error || 'Check Railway logs';
-      dot.className = 'sync-dot';
-    }
-  } catch(e) {
-    label.textContent = 'Sync error'; time.textContent = e.message;
-    dot.className = 'sync-dot';
+function normalizeArray(data){
+  if(Array.isArray(data))return data;
+  if(data&&typeof data==="object"){
+    const keys=["items","campaigns","keywords","portfolios","productAds","product_ads","targets","results","data"];
+    for(const k of keys){if(Array.isArray(data[k]))return data[k];}
+    for(const k of Object.keys(data)){if(Array.isArray(data[k]))return data[k];}
+    return[data];
   }
-  btn.classList.remove('loading');
-  btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><path d="M14 8A6 6 0 1 1 8 2M14 2v4h-4"/></svg> Refresh';
+  return[];
 }
 
-function updateSyncStatus(timestamp) {
-  const dot = document.getElementById('syncDot');
-  const label = document.getElementById('syncLabel');
-  const time = document.getElementById('syncTime');
-  const badge = document.getElementById('lastSyncBadge');
-  if (timestamp) {
-    const d = new Date(timestamp);
-    const str = d.toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-    dot.className = 'sync-dot connected';
-    label.textContent = 'Data synced';
-    time.textContent = str;
-    badge.textContent = 'Last sync: ' + str;
-    // Hide refresh banner
-    const banner = document.getElementById('dashRefreshBanner');
-    if (banner) banner.style.display = 'none';
-  }
-}
-
-// ── LOAD ALL DATA ──
-async function loadAllData() {
-  try {
-    const [camps, kws, portfolios, searchT, prodAds, perfMap, kwPerf] = await Promise.allSettled([
-      API.get('/api/campaigns'),
-      API.get('/api/keywords'),
-      API.get('/api/portfolios'),
-      API.get('/api/search-terms'),
-      API.get('/api/product-ads'),
-      API.get('/api/performance-map'),
-      API.get('/api/kw-performance'),
+async function loadAllData(){
+  try{
+    const [camps,kws,ports,sts,ads,perfC,perfK,perfA,analytics]=await Promise.allSettled([
+      API.get("/api/campaigns"),API.get("/api/keywords"),API.get("/api/portfolios"),
+      API.get("/api/search-terms"),API.get("/api/product-ads"),
+      API.get("/api/perf/campaigns"),API.get("/api/perf/keywords"),
+      API.get("/api/perf/asins"),API.get("/api/perf/analytics"),
     ]);
+    if(perfC.value?.data)store.perfCampaigns=normalizeArray(perfC.value.data);
+    if(perfK.value?.data)store.perfKeywords=normalizeArray(perfK.value.data);
+    if(perfA.value?.data)store.perfAsins=normalizeArray(perfA.value.data);
+    if(analytics.value?.data)store.analytics=normalizeArray(analytics.value.data);
 
-    // Store performance map first so campaign merge can use it
-    if (perfMap.value?.data) {
-      store.performanceMap = perfMap.value.data || {};
-    }
-    if (kwPerf.value?.data) {
-      store.kwPerformance = normalizeArray(kwPerf.value.data);
-    }
+    const campPerfMap={};
+    store.perfCampaigns.forEach(r=>{if(r.campaignId)campPerfMap[String(r.campaignId)]=r;});
+    const kwPerfMap={};
+    store.perfKeywords.forEach(r=>{if(r.keywordId)kwPerfMap[String(r.keywordId)]=r;});
 
-    if (camps.value?.data) {
-      // Merge campaign structure with performance data
-      const rawCamps = normalizeArray(camps.value.data);
-      store.campaigns = rawCamps.map(c => {
-        const id = String(c.campaignId || c.campaign_id || '');
-        const perf = store.performanceMap?.[id] || {};
-        return { ...c, ...perf };
+    if(camps.value?.data){
+      store.campaigns=normalizeArray(camps.value.data).map(c=>{
+        const perf=campPerfMap[String(c.campaignId||"")]||{};
+        return{...c,spend:parseFloat(perf.spend)||0,sales:parseFloat(perf.sales14d||perf.sales)||0,acos:perf.acos!=null?parseFloat(perf.acos):null,roas:perf.roas!=null?parseFloat(perf.roas):null,impressions:parseInt(perf.impressions)||0,clicks:parseInt(perf.clicks)||0,orders:parseInt(perf.purchases14d||perf.orders)||0,cpc:perf.cpc!=null?parseFloat(perf.cpc):null};
       });
-      renderCampaigns(); renderDashboard();
+      renderCampaigns();renderDashboard();
     }
-    if (kws.value?.data) {
-      // Merge keywords with keyword performance
-      const rawKws = normalizeArray(kws.value.data);
-      const kwPerfById = {};
-      (store.kwPerformance || []).forEach(k => {
-        if (k.keywordId) kwPerfById[String(k.keywordId)] = k;
+    if(kws.value?.data){
+      store.keywords=normalizeArray(kws.value.data).map(k=>{
+        const perf=kwPerfMap[String(k.keywordId||"")]||{};
+        return{...k,spend:parseFloat(perf.spend)||0,sales:parseFloat(perf.sales14d||perf.sales)||0,acos:perf.acos!=null?parseFloat(perf.acos):null,roas:perf.roas!=null?parseFloat(perf.roas):null,impressions:parseInt(perf.impressions)||0,clicks:parseInt(perf.clicks)||0,orders:parseInt(perf.purchases14d||perf.orders)||0,cpc:perf.cpc!=null?parseFloat(perf.cpc):null,bid:parseFloat(perf.bid||k.bid||k.defaultBid)||0};
       });
-      store.keywords = rawKws.map(k => {
-        const id = String(k.keywordId || k.keyword_id || '');
-        const perf = kwPerfById[id] || {};
-        return { ...k, ...perf };
-      });
-      renderKeywords();
+      renderKeywords();populateKwFilters();
     }
-    if (portfolios.value?.data) { store.portfolios  = normalizeArray(portfolios.value.data); renderPortfolios(); }
-    if (searchT.value?.data)    { store.searchTerms = normalizeArray(searchT.value.data);    renderSearchTerms(); }
-    if (prodAds.value?.data)    { store.productAds  = normalizeArray(prodAds.value.data);    renderASINs(); }
-  } catch(e) { console.warn('Load error:', e); }
+    if(ports.value?.data){store.portfolios=normalizeArray(ports.value.data);renderPortfolios();populatePortfolioFilters();}
+    if(sts.value?.data){store.searchTerms=normalizeArray(sts.value.data);renderSearchTerms();}
+    if(ads.value?.data){store.productAds=normalizeArray(ads.value.data);renderASINs();}
+    renderAnalytics();renderProducts();
+  }catch(e){console.warn("loadAllData:",e);}
 }
 
-// ── NORMALIZE — handle different MAP response shapes ──
-function normalizeArray(data) {
-  if (Array.isArray(data)) return data;
-  if (data && typeof data === 'object') {
-    const keys = Object.keys(data);
-    for (const k of keys) { if (Array.isArray(data[k])) return data[k]; }
-    return [data];
+function fmt$(n){if(!n&&n!==0)return"-";return"$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtPct(n){if(n==null)return"-";return Number(n).toFixed(1)+"%";}
+function fmtNum(n){if(!n&&n!==0)return"-";return Number(n).toLocaleString("en-US");}
+function acosClass(v){return!v?"":v<25?"good":v<40?"warn":"bad";}
+function stateColor(s){s=(s||"").toUpperCase();return s==="ENABLED"?"badge-green":s==="PAUSED"?"badge-amber":"badge-gray";}
+function stateLabel(s){s=(s||"").toUpperCase();return s==="ENABLED"?"Live":s==="PAUSED"?"Paused":s||"-";}
+function campName(c){return c.name||c.campaignName||c.campaign_name||"Unnamed";}
+function kwText(k){return k.keywordText||k.keyword_text||k.text||k.query||"-";}
+function getState(item){return(item.state||item.status||"").toString().toUpperCase();}
+function getBudget(c){if(c.budget&&typeof c.budget==="object")return c.budget.budget;return c.budget||c.dailyBudget||c.daily_budget||null;}
+function getCampType(c){return c.targetingType||c.campaignType||c._adType||"-";}
+function acosBarHtml(val){
+  if(val==null)return'<span class="td-muted">-</span>';
+  const pct=Math.min(val,100);
+  return`<div class="acos-wrap"><div class="acos-bar"><div class="acos-fill ${acosClass(val)}" style="width:${pct}%"></div></div><span class="acos-val">${fmtPct(val)}</span></div>`;
+}
+
+function renderDashboard(){
+  const camps=store.campaigns;
+  if(!camps.length)return;
+  let spend=0,sales=0,clicks=0;
+  const live=camps.filter(c=>getState(c)==="ENABLED");
+  camps.forEach(c=>{spend+=c.spend||0;sales+=c.sales||0;clicks+=c.clicks||0;});
+  const acos=sales>0?(spend/sales*100):null;
+  const roas=spend>0?(sales/spend):null;
+  const cpc=clicks>0?(spend/clicks):null;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set("m-spend",spend>0?fmt$(spend):"-");set("m-sales",sales>0?fmt$(sales):"-");
+  set("m-acos",acos!=null?fmtPct(acos):"-");set("m-roas",roas!=null?roas.toFixed(1)+"x":"-");
+  set("m-cpc",cpc!=null?fmt$(cpc):"-");set("m-camps",camps.length);set("m-camps-d",live.length+" live");
+  const top5=[...camps].sort((a,b)=>(b.spend||0)-(a.spend||0)).slice(0,5);
+  const dc=document.getElementById("dashCampaigns");
+  if(dc&&top5.length){
+    dc.innerHTML=`<table><thead><tr><th>Campaign</th><th>State</th><th>Spend</th><th>Sales</th><th>ACOS</th><th>CPC</th></tr></thead><tbody>${top5.map(c=>`<tr><td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${campName(c)}</td><td><span class="badge ${stateColor(getState(c))}">${stateLabel(getState(c))}</span></td><td class="td-mono">${fmt$(c.spend)}</td><td class="td-mono">${fmt$(c.sales)}</td><td>${acosBarHtml(c.acos)}</td><td class="td-mono td-muted">${fmt$(c.cpc)}</td></tr>`).join("")}</tbody></table>`;
   }
-  return [];
+  renderDashChart();
 }
 
-// ── FORMAT HELPERS ──
-function fmt$(n) { if (!n && n !== 0) return '—'; return '$' + Number(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
-function fmtPct(n) { if (!n && n !== 0) return '—'; return Number(n).toFixed(1) + '%'; }
-function fmtNum(n) { if (!n && n !== 0) return '—'; return Number(n).toLocaleString('en-US'); }
-function acosClass(v) { if (!v) return ''; return v < 25 ? 'good' : v < 40 ? 'warn' : 'bad'; }
-function stateColor(s) {
-  s = (s||'').toLowerCase();
-  if (s === 'enabled') return 'badge-green';
-  if (s === 'paused') return 'badge-amber';
-  if (s === 'archived') return 'badge-gray';
-  return 'badge-gray';
-}
-function stateLabel(s) {
-  s = (s||'').toLowerCase();
-  if (s === 'enabled') return 'Live';
-  if (s === 'paused') return 'Paused';
-  if (s === 'archived') return 'Archived';
-  return s || '—';
-}
-function campName(c) { return c.name || c.campaignName || c.campaign_name || 'Unnamed'; }
-function kwText(k) { return k.keywordText || k.keyword_text || k.text || k.query || '—'; }
-function getState(item) { return (item.state || item.status || item.enabled || '').toString().toLowerCase(); }
-function getBudget(c) {
-  if (c.budget && typeof c.budget === 'object') return c.budget.budget;
-  return c.budget || c.dailyBudget || c.daily_budget || null;
-}
-function getCampType(c) {
-  return c.targetingType || c.campaignType || c.campaign_type || c._adType || '—';
-}
-
-// ── ACOS BAR HTML ──
-function acosBarHtml(val) {
-  if (!val && val !== 0) return '<span class="td-muted">—</span>';
-  const pct = Math.min(val, 100);
-  return `<div class="acos-wrap"><div class="acos-bar"><div class="acos-fill ${acosClass(val)}" style="width:${pct}%"></div></div><span class="acos-val">${fmtPct(val)}</span></div>`;
-}
-
-// ── RENDER DASHBOARD ──
-function renderDashboard() {
-  const camps = store.campaigns;
-  if (!camps.length) return;
-
-  let totalBudget = 0, totalSpend = 0, totalSales = 0;
-  const liveCamps = camps.filter(c => getState(c) === 'enabled');
-  camps.forEach(c => {
-    totalBudget += getBudget(c) || 0;
-    totalSpend  += parseFloat(c.spend)  || 0;
-    totalSales  += parseFloat(c.sales)  || 0;
-  });
-  const acos = totalSales > 0 ? (totalSpend / totalSales * 100) : null;
-  const roas = totalSpend > 0 ? (totalSales / totalSpend)       : null;
-
-  const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
-  set('m-sales', totalSales > 0 ? fmt$(totalSales) : liveCamps.length + ' live');
-  set('m-spend', totalSpend > 0 ? fmt$(totalSpend) : fmt$(totalBudget) + '/day budget');
-  set('m-acos',  acos ? fmtPct(acos) : '—');
-  set('m-roas',  roas ? roas.toFixed(1) + 'x' : '—');
-  set('m-camps', camps.length);
-  set('m-camps-d', liveCamps.length + ' live');
-
-  // Top 5 campaigns by budget
-  const top5 = [...camps].sort((a,b) => (getBudget(b)||0) - (getBudget(a)||0)).slice(0,5);
-  const dashCamps = document.getElementById('dashCampaigns');
-  if (dashCamps && top5.length) {
-    dashCamps.innerHTML = `<table><thead><tr><th>Campaign</th><th>State</th><th>Budget</th><th>ACOS</th></tr></thead><tbody>${
-      top5.map(c => `<tr>
-        <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${campName(c)}</td>
-        <td><span class="badge ${stateColor(getState(c))}">${stateLabel(getState(c))}</span></td>
-        <td class="td-mono">${fmt$(getBudget(c))}</td>
-        <td>${acosBarHtml(c.acos||c.attributedSales30dSameSKU)}</td>
-      </tr>`).join('')
-    }</tbody></table>`;
-  }
-
-  // Top 5 keywords by spend
-  const top5kw = [...store.keywords].sort((a,b) => parseFloat(b.cost||b.spend||0) - parseFloat(a.cost||a.spend||0)).slice(0,5);
-  const dashKws = document.getElementById('dashKeywords');
-  if (dashKws && top5kw.length) {
-    dashKws.innerHTML = `<table><thead><tr><th>Keyword</th><th>Match</th><th>Spend</th><th>ACOS</th></tr></thead><tbody>${
-      top5kw.map(k => `<tr>
-        <td style="font-family:var(--mono);font-size:12.5px">${kwText(k)}</td>
-        <td><span class="badge badge-blue">${k.matchType||k.match_type||'—'}</span></td>
-        <td class="td-mono">${fmt$(k.cost||k.spend)}</td>
-        <td>${acosBarHtml(k.acos)}</td>
-      </tr>`).join('')
-    }</tbody></table>`;
+function renderDashChart(){
+  const data=store.analytics;
+  if(!data.length)return;
+  const chart=document.getElementById("dashChart"),labels=document.getElementById("dashChartLabels");
+  if(!chart)return;
+  const recent=data.slice(-30);
+  const maxVal=Math.max(...recent.map(d=>Math.max(parseFloat(d.spend)||0,parseFloat(d.sales14d||d.sales)||0)),1);
+  chart.innerHTML=recent.map(d=>{
+    const spend=parseFloat(d.spend)||0,sales=parseFloat(d.sales14d||d.sales)||0;
+    return`<div class="chart-bar-wrap"><div class="chart-bar sales-bar" style="height:${(sales/maxVal*100).toFixed(1)}%"></div><div class="chart-bar spend-bar" style="height:${(spend/maxVal*100).toFixed(1)}%"></div></div>`;
+  }).join("");
+  if(labels&&recent.length>=2){
+    const f=new Date(recent[0].date||"").toLocaleDateString("en-US",{month:"short",day:"numeric"});
+    const l=new Date(recent[recent.length-1].date||"").toLocaleDateString("en-US",{month:"short",day:"numeric"});
+    labels.innerHTML=`<span>${f}</span><span>${l}</span>`;
   }
 }
 
-// ── RENDER CAMPAIGNS ──
-function renderCampaigns(camps) {
-  const data = camps || store.campaigns;
-  const wrap = document.getElementById('campTableWrap');
-  if (!wrap) return;
-  if (!data.length) {
-    wrap.innerHTML = `<div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8L7 3L12 8"/><path d="M7 3V13"/></svg></div><div class="empty-title">No campaigns found</div><div class="empty-desc">Try a different filter or click Refresh</div></div>`;
-    return;
-  }
-  wrap.innerHTML = `<div class="table-wrap"><table><thead><tr>
-    <th>Campaign</th><th>Type</th><th>State</th><th>Budget/day</th>
-    <th>Spend</th><th>Sales</th><th>ACOS</th><th>ROAS</th><th>Impressions</th><th>Clicks</th>
-  </tr></thead><tbody>${data.map(c => {
-    const state = getState(c);
-    const spend = parseFloat(c.spend) || 0;
-    const sales = parseFloat(c.sales) || 0;
-    const acos  = c.acos != null ? parseFloat(c.acos) : (sales > 0 ? spend/sales*100 : null);
-    const roas  = c.roas != null ? parseFloat(c.roas) : (spend > 0 ? sales/spend : null);
-    return `<tr data-id="${c.campaignId||c.campaign_id||''}" data-portfolio="${c.portfolioId||c.portfolio_id||''}" data-state="${state}" data-type="${getCampType(c).toLowerCase()}">
-      <td style="max-width:220px"><span class="status-dot ${state==='enabled'?'dot-green':state==='paused'?'dot-amber':'dot-gray'}"></span>${campName(c)}</td>
-      <td><span class="badge badge-blue">${getCampType(c)}</span></td>
-      <td><span class="badge ${stateColor(state)}">${stateLabel(state)}</span></td>
-      <td class="td-mono">${fmt$(getBudget(c))}</td>
-      <td class="td-mono">${spend > 0 ? fmt$(spend) : '—'}</td>
-      <td class="td-mono">${sales > 0 ? fmt$(sales) : '—'}</td>
-      <td>${acos != null ? acosBarHtml(acos) : '<span class="td-muted">—</span>'}</td>
-      <td class="td-mono ${roas && roas > 2 ? '' : 'td-muted'}">${roas ? roas.toFixed(1)+'x' : '—'}</td>
-      <td class="td-mono td-muted">${fmtNum(c.impressions) || '—'}</td>
-      <td class="td-mono td-muted">${fmtNum(c.clicks) || '—'}</td>
-    </tr>`;
-  }).join('')}</tbody></table></div>`;
+function renderCampaigns(camps){
+  const data=camps||store.campaigns;
+  const wrap=document.getElementById("campTableWrap");
+  if(!wrap)return;
+  if(!data.length){wrap.innerHTML='<div class="empty-state"><div class="empty-title">No campaigns found</div><div class="empty-desc">Try a different filter or click Refresh</div></div>';return;}
+  wrap.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Campaign</th><th>Portfolio</th><th>Type</th><th>State</th><th>Budget/day</th><th>Spend</th><th>Sales</th><th>ACOS</th><th>ROAS</th><th>CPC</th><th>Clicks</th><th>Orders</th></tr></thead><tbody>${data.map(c=>{
+    const state=getState(c);
+    const portName=store.portfolios.find(p=>p.portfolioId===c.portfolioId)?.name||"-";
+    return`<tr data-portfolio="${c.portfolioId||""}" data-state="${state}" data-type="${getCampType(c).toUpperCase()}"><td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span class="status-dot ${state==="ENABLED"?"dot-green":state==="PAUSED"?"dot-amber":"dot-gray"}"></span>${campName(c)}</td><td class="td-muted" style="font-size:12px">${portName}</td><td><span class="badge badge-blue">${getCampType(c)}</span></td><td><span class="badge ${stateColor(state)}">${stateLabel(state)}</span></td><td class="td-mono">${fmt$(getBudget(c))}</td><td class="td-mono">${(c.spend||0)>0?fmt$(c.spend):"-"}</td><td class="td-mono">${(c.sales||0)>0?fmt$(c.sales):"-"}</td><td>${acosBarHtml(c.acos)}</td><td class="td-mono ${(c.roas||0)>2?"":"td-muted"}">${c.roas?c.roas.toFixed(1)+"x":"-"}</td><td class="td-mono td-muted">${fmt$(c.cpc)}</td><td class="td-mono td-muted">${fmtNum(c.clicks)}</td><td class="td-mono td-muted">${fmtNum(c.orders)}</td></tr>`;
+  }).join("")}</tbody></table></div>`;
 }
 
-function filterCampaigns() {
-  const q = (document.getElementById('campSearch')?.value||'').toLowerCase();
-  const portfolio = document.getElementById('campPortfolio')?.value||'';
-  const type = (document.getElementById('campType')?.value||'').toLowerCase();
-  const state = (document.getElementById('campState')?.value||'').toLowerCase();
-  let data = store.campaigns;
-  if (q) data = data.filter(c => campName(c).toLowerCase().includes(q));
-  if (portfolio) data = data.filter(c => (c.portfolioId||c.portfolio_id||'') === portfolio);
-  if (type) data = data.filter(c => (c.campaignType||c.campaign_type||'').toLowerCase().includes(type));
-  if (state) data = data.filter(c => getState(c) === state);
+function filterCampaigns(){
+  const q=(document.getElementById("campSearch")?.value||"").toLowerCase();
+  const portfolio=document.getElementById("campPortfolio")?.value||"";
+  const type=(document.getElementById("campType")?.value||"").toUpperCase();
+  const state=(document.getElementById("campState")?.value||"").toUpperCase();
+  let data=store.campaigns;
+  if(q)data=data.filter(c=>campName(c).toLowerCase().includes(q));
+  if(portfolio)data=data.filter(c=>(c.portfolioId||"")===portfolio);
+  if(type)data=data.filter(c=>getCampType(c).toUpperCase().includes(type));
+  if(state)data=data.filter(c=>getState(c)===state);
   renderCampaigns(data);
 }
 
-// ── RENDER PORTFOLIOS (into campaign filter) ──
-function renderPortfolios() {
-  const sel = document.getElementById('campPortfolio');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">All Portfolios</option>';
-  store.portfolios.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.portfolioId || p.portfolio_id || p.id || '';
-    opt.textContent = '🗂 ' + (p.name || p.portfolioName || 'Portfolio');
-    sel.appendChild(opt);
+function populatePortfolioFilters(){
+  const ports=store.portfolios;
+  ["campPortfolio","kwPortfolio"].forEach(id=>{
+    const sel=document.getElementById(id);if(!sel)return;
+    const current=sel.value;
+    sel.innerHTML='<option value="">All Portfolios</option>';
+    ports.forEach(p=>{const opt=document.createElement("option");opt.value=p.portfolioId||"";opt.textContent="\uD83D\uDDC2\uFE0F "+(p.name||"Portfolio");sel.appendChild(opt);});
+    sel.value=current;
   });
-  if (store.portfolios.length) {
-    const none = document.createElement('option');
-    none.value = 'none'; none.textContent = '— No Portfolio';
-    sel.appendChild(none);
+  const ncPort=document.getElementById("nc-portfolio");
+  if(ncPort){
+    ncPort.innerHTML='<option value="">No Portfolio</option>';
+    ports.forEach(p=>{const opt=document.createElement("option");opt.value=p.portfolioId||"";opt.textContent=p.name||"Portfolio";ncPort.appendChild(opt);});
   }
 }
 
-// ── RENDER KEYWORDS ──
-function renderKeywords(kws) {
-  const data = kws || store.keywords;
-  const wrap = document.getElementById('kwTableWrap');
-  if (!wrap) return;
-  if (!data.length) {
-    wrap.innerHTML = `<div class="empty-state"><div class="empty-title">No keywords found</div><div class="empty-desc">Try a different filter or click Refresh</div></div>`;
-    return;
-  }
-
-  // Populate campaign filter
-  const campSel = document.getElementById('kwCampaign');
-  if (campSel && campSel.options.length <= 1) {
-    const camps = [...new Set(data.map(k => k.campaignName || k.campaign_name).filter(Boolean))];
-    camps.forEach(name => {
-      const opt = document.createElement('option');
-      opt.value = name; opt.textContent = name;
-      campSel.appendChild(opt);
-    });
-  }
-
-  wrap.innerHTML = `<div class="table-wrap"><table><thead><tr>
-    <th>Keyword</th><th>Campaign</th><th>Match</th><th>State</th>
-    <th>Bid</th><th>Impressions</th><th>Clicks</th><th>CTR</th>
-    <th>Spend</th><th>Sales</th><th>ACOS</th><th>Orders</th><th>Action</th>
-  </tr></thead><tbody>${data.map((k,i) => {
-    const state = getState(k);
-    const acos = k.acos || (k.cost && k.attributedSales30d ? (k.cost/k.attributedSales30d*100) : null);
-    const ctr = k.impressions && k.clicks ? (k.clicks/k.impressions*100) : null;
-    const isEnabled = state === 'enabled';
-    const isNeg = state === 'negated' || state === 'negative';
-    return `<tr data-state="${state}" data-match="${(k.matchType||k.match_type||'').toLowerCase()}" data-campaign="${k.campaignName||k.campaign_name||''}">
-      <td style="font-family:var(--mono);font-size:12.5px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${kwText(k)}</td>
-      <td class="td-muted" style="font-size:12px;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${k.campaignName||k.campaign_name||'—'}</td>
-      <td><span class="badge badge-blue">${k.matchType||k.match_type||'—'}</span></td>
-      <td class="kw-state-cell-${i}"><span class="badge ${stateColor(state)}">${stateLabel(state)}</span></td>
-      <td>${isNeg ? '<span class="td-muted">—</span>' : `<div class="bid-wrap" id="bid-wrap-${i}"><span class="bid-prefix">$</span><input class="bid-input" type="number" value="${k.bid||k.keywordBid||k.keyword_bid||0}" min="0.02" step="0.01" onblur="saveBid(this,${i})" onkeydown="if(event.key==='Enter')saveBid(this,${i})"/><button class="bid-confirm" onclick="saveBid(this.previousElementSibling,${i})">✓</button></div>`}</td>
-      <td class="td-mono td-muted">${fmtNum(k.impressions)}</td>
-      <td class="td-mono td-muted">${fmtNum(k.clicks)}</td>
-      <td class="td-mono">${ctr ? fmtPct(ctr) : '—'}</td>
-      <td class="td-mono">${fmt$(k.cost||k.spend)}</td>
-      <td class="td-mono">${fmt$(k.attributedSales30d||k.sales)}</td>
-      <td>${acosBarHtml(acos)}</td>
-      <td class="td-mono td-muted">${fmtNum(k.attributedConversions30d||k.orders)}</td>
-      <td>${isNeg ? '<span class="td-muted" style="font-size:12px">Negated</span>' : `<button class="kw-toggle ${isEnabled?'is-enabled':'is-paused'}" onclick="toggleKw(this,'${k.keywordId||k.keyword_id||i}')" data-idx="${i}">${isEnabled?'Pause':'Enable'}</button>`}</td>
-    </tr>`;
-  }).join('')}</tbody></table></div>`;
+function renderKeywords(kws){
+  const data=kws||store.keywords;
+  const wrap=document.getElementById("kwTableWrap");
+  if(!wrap)return;
+  if(!data.length){wrap.innerHTML='<div class="empty-state"><div class="empty-title">No keywords found</div><div class="empty-desc">Try a different filter or click Refresh</div></div>';return;}
+  wrap.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Keyword</th><th>Campaign</th><th>Match</th><th>State</th><th>Bid</th><th>Spend</th><th>Sales</th><th>ACOS</th><th>CPC</th><th>Clicks</th><th>Orders</th><th>Action</th></tr></thead><tbody>${data.map((k,i)=>{
+    const state=getState(k),isEnabled=state==="ENABLED",isNeg=state==="NEGATED";
+    return`<tr data-state="${state}" data-match="${(k.matchType||"").toUpperCase()}" data-campaign="${k.campaignId||""}" data-asin="${k.asin||""}"><td style="font-family:var(--mono);font-size:12.5px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${kwText(k)}</td><td class="td-muted" style="font-size:12px;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${k.campaignName||"-"}</td><td><span class="badge badge-blue">${k.matchType||"-"}</span></td><td class="kw-state-cell-${i}"><span class="badge ${stateColor(state)}">${stateLabel(state)}</span></td><td>${isNeg?"<span class='td-muted'>-</span>":`<div class="bid-wrap" id="bw-${i}"><span class="bid-prefix">$</span><input class="bid-input" type="number" value="${parseFloat(k.bid||0).toFixed(2)}" min="0.02" step="0.01" onblur="saveBid(this,${i},'${k.keywordId||""}')" onkeydown="if(event.key==='Enter')saveBid(this,${i},'${k.keywordId||''}')"/><button class="bid-confirm" onclick="saveBid(this.previousElementSibling,${i},'${k.keywordId||''}')">&#10003;</button></div>`}</td><td class="td-mono">${(k.spend||0)>0?fmt$(k.spend):"-"}</td><td class="td-mono">${(k.sales||0)>0?fmt$(k.sales):"-"}</td><td>${acosBarHtml(k.acos)}</td><td class="td-mono td-muted">${fmt$(k.cpc)}</td><td class="td-mono td-muted">${fmtNum(k.clicks)}</td><td class="td-mono td-muted">${fmtNum(k.orders)}</td><td>${isNeg?'<span style="font-size:11px;color:var(--text3)">Negated</span>':`<button class="kw-toggle ${isEnabled?"is-enabled":"is-paused"}" onclick="toggleKw(this,'${k.keywordId||""}',${i})">${isEnabled?"Pause":"Enable"}</button>`}</td></tr>`;
+  }).join("")}</tbody></table></div>`;
 }
 
-function filterKeywords() {
-  const q = (document.getElementById('kwSearch')?.value||'').toLowerCase();
-  const match = (document.getElementById('kwMatch')?.value||'').toLowerCase();
-  const state = (document.getElementById('kwState')?.value||'').toLowerCase();
-  const camp = (document.getElementById('kwCampaign')?.value||'');
-  let data = store.keywords;
-  if (q) data = data.filter(k => kwText(k).toLowerCase().includes(q));
-  if (match) data = data.filter(k => (k.matchType||k.match_type||'').toLowerCase() === match);
-  if (state) data = data.filter(k => getState(k) === state);
-  if (camp) data = data.filter(k => (k.campaignName||k.campaign_name||'') === camp);
+function populateKwFilters(){
+  const kws=store.keywords;
+  const campSel=document.getElementById("kwCampaign");
+  if(campSel){
+    campSel.innerHTML='<option value="">All Campaigns</option>';
+    const camps=[...new Set(kws.map(k=>k.campaignId).filter(Boolean))];
+    camps.forEach(id=>{const c=store.campaigns.find(c=>c.campaignId===id);const opt=document.createElement("option");opt.value=id;opt.textContent=c?campName(c):id;campSel.appendChild(opt);});
+  }
+  const asinSel=document.getElementById("kwAsin");
+  if(asinSel){
+    asinSel.innerHTML='<option value="">All ASINs</option>';
+    const asins=[...new Set(store.productAds.map(a=>a.asin).filter(Boolean))];
+    asins.forEach(asin=>{const opt=document.createElement("option");opt.value=asin;opt.textContent=asin;asinSel.appendChild(opt);});
+  }
+}
+
+function filterKeywords(){
+  const q=(document.getElementById("kwSearch")?.value||"").toLowerCase();
+  const portfolio=document.getElementById("kwPortfolio")?.value||"";
+  const match=(document.getElementById("kwMatch")?.value||"").toUpperCase();
+  const state=(document.getElementById("kwState")?.value||"").toUpperCase();
+  const asin=document.getElementById("kwAsin")?.value||"";
+  const campaign=document.getElementById("kwCampaign")?.value||"";
+  let data=store.keywords;
+  if(q)data=data.filter(k=>kwText(k).toLowerCase().includes(q));
+  if(match)data=data.filter(k=>(k.matchType||"").toUpperCase()===match);
+  if(state)data=data.filter(k=>getState(k)===state);
+  if(campaign)data=data.filter(k=>(k.campaignId||"")===campaign);
+  if(portfolio){const campIds=store.campaigns.filter(c=>(c.portfolioId||"")===portfolio).map(c=>c.campaignId);data=data.filter(k=>campIds.includes(k.campaignId));}
+  if(asin){const adGroupIds=store.productAds.filter(a=>a.asin===asin).map(a=>a.adGroupId);data=data.filter(k=>adGroupIds.includes(k.adGroupId)||!adGroupIds.length);}
   renderKeywords(data);
 }
 
-// ── KEYWORD BID SAVE ──
-async function saveBid(input, idx) {
-  const val = parseFloat(input.value);
-  if (isNaN(val) || val < 0.02) { input.value = '0.02'; }
-  const wrap = document.getElementById('bid-wrap-' + idx);
-  if (wrap) { wrap.classList.add('saved'); setTimeout(() => wrap.classList.remove('saved'), 1500); }
-  const kw = store.keywords[idx];
-  if (kw && (kw.keywordId || kw.keyword_id)) {
-    try { await API.put('/api/keywords/' + (kw.keywordId||kw.keyword_id), { bid: parseFloat(input.value) }); }
-    catch(e) { console.warn('Bid update failed:', e.message); }
+async function saveBid(input,idx,kwId){
+  const val=parseFloat(input.value);
+  if(isNaN(val)||val<0.02)input.value="0.02";
+  const wrap=document.getElementById("bw-"+idx);
+  if(wrap){wrap.classList.add("saved");setTimeout(()=>wrap.classList.remove("saved"),1500);}
+  if(kwId){try{await API.put("/api/keywords/"+kwId,{bid:parseFloat(input.value)});}catch(e){console.warn("Bid update:",e.message);}}
+}
+
+async function toggleKw(btn,kwId,idx){
+  const isEnabled=btn.classList.contains("is-enabled");
+  const newState=isEnabled?"PAUSED":"ENABLED";
+  btn.textContent=isEnabled?"Enable":"Pause";
+  btn.classList.toggle("is-enabled");btn.classList.toggle("is-paused");
+  const row=btn.closest("tr");
+  const stateCell=row?.querySelector(`.kw-state-cell-${idx}`);
+  if(stateCell)stateCell.innerHTML=`<span class="badge ${stateColor(newState)}">${stateLabel(newState)}</span>`;
+  if(kwId){try{await API.put("/api/keywords/"+kwId,{state:newState});}catch(e){console.warn("State update:",e.message);}}
+}
+
+function renderSearchTerms(sts){
+  const data=(sts||store.searchTerms).slice(0,200);
+  const wrap=document.getElementById("stTableWrap");
+  if(!wrap||!data.length)return;
+  wrap.innerHTML=`<div class="table-wrap"><table><thead><tr><th></th><th>Search Term</th><th>Campaign</th><th>Match</th><th>Spend</th><th>Sales</th><th>ACOS</th><th>CPC</th><th>Clicks</th><th>Orders</th><th>Action</th></tr></thead><tbody>${data.map((st,i)=>{
+    const acos=st.acos||(st.spend&&(st.sales14d||st.sales)?(parseFloat(st.spend||0)/parseFloat(st.sales14d||st.sales||1)*100):null);
+    const isGood=acos&&acos<35;
+    const term=st.searchTerm||st.query||st.search_term||"-";
+    return`<tr><td><input type="checkbox" ${isGood?"checked":""}/></td><td style="font-family:var(--mono);font-size:12.5px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${term}</td><td class="td-muted" style="font-size:12px">${st.campaignName||"-"}</td><td><span class="badge badge-blue">${st.matchType||"-"}</span></td><td class="td-mono">${fmt$(st.spend)}</td><td class="td-mono">${fmt$(st.sales14d||st.sales)}</td><td>${acosBarHtml(acos)}</td><td class="td-mono td-muted">${fmt$(st.cpc)}</td><td class="td-mono td-muted">${fmtNum(st.clicks)}</td><td class="td-mono td-muted">${fmtNum(st.purchases14d||st.orders)}</td><td><button class="btn btn-sm ${isGood?"btn-primary":""}" style="${!isGood?"background:var(--red-light);border-color:#fca5a5;color:var(--red)":""}" onclick="openAddCampDrawer('${term.replace(/'/g,"\\'")}')">Add to Campaign</button></td></tr>`;
+  }).join("")}</tbody></table></div>`;
+  const sel=document.getElementById("stCampaign");
+  if(sel&&sel.options.length<=1){const camps=[...new Set(data.map(s=>s.campaignName).filter(Boolean))];camps.forEach(name=>{const opt=document.createElement("option");opt.value=name;opt.textContent=name;sel.appendChild(opt);});}
+}
+
+function filterSearchTerms(){
+  const q=(document.getElementById("stSearch")?.value||"").toLowerCase();
+  const camp=document.getElementById("stCampaign")?.value||"";
+  let data=store.searchTerms;
+  if(q)data=data.filter(s=>(s.searchTerm||s.query||"").toLowerCase().includes(q));
+  if(camp)data=data.filter(s=>s.campaignName===camp);
+  renderSearchTerms(data);
+}
+
+function renderPortfolios(){
+  const ports=store.portfolios;
+  const grid=document.getElementById("portfolioGrid");
+  if(!grid)return;
+  if(!ports.length){grid.innerHTML='<div class="empty-state"><div class="empty-title">No portfolios</div><div class="empty-desc">Click Refresh to load</div></div>';return;}
+  grid.innerHTML=`<div class="portfolio-grid">${ports.map(p=>{
+    const portCamps=store.campaigns.filter(c=>c.portfolioId===p.portfolioId);
+    const totalBudget=portCamps.reduce((s,c)=>s+(getBudget(c)||0),0);
+    const totalSpend=portCamps.reduce((s,c)=>s+(c.spend||0),0);
+    const state=(p.state||"").toUpperCase();
+    const budgetPolicy=p.budget?`<div class="portfolio-meta" style="margin-top:2px">Budget cap: ${fmt$(p.budget.budget)}${p.budget.budgetType==="MONTHLY"?" /mo":""}</div>`:"";
+    return`<div class="portfolio-card" onclick="filterByPortfolio('${p.portfolioId}')"><div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px"><div class="portfolio-name">${p.name||"Unnamed"}</div><span class="badge ${state==="ENABLED"?"badge-green":"badge-amber"}">${state==="ENABLED"?"Active":"Paused"}</span></div><div class="portfolio-meta">${portCamps.length} campaigns</div>${budgetPolicy}<div class="portfolio-stats"><div class="portfolio-stat"><div class="portfolio-stat-label">Daily Budget</div><div class="portfolio-stat-val">${fmt$(totalBudget)}</div></div><div class="portfolio-stat"><div class="portfolio-stat-label">Spend (14d)</div><div class="portfolio-stat-val">${totalSpend>0?fmt$(totalSpend):"-"}</div></div></div></div>`;
+  }).join("")}</div>`;
+}
+
+function filterByPortfolio(portfolioId){
+  nav("campaigns",null);
+  const sel=document.getElementById("campPortfolio");
+  if(sel){sel.value=portfolioId;filterCampaigns();}
+  const navBtns=document.querySelectorAll(".nav-item");
+  navBtns.forEach(b=>{if(b.textContent.trim()==="Campaigns")b.classList.add("active");});
+}
+
+function renderAnalytics(){
+  const perf=store.perfCampaigns;
+  if(!perf.length)return;
+  let spend=0,sales=0;
+  perf.forEach(r=>{spend+=parseFloat(r.spend)||0;sales+=parseFloat(r.sales14d||r.sales)||0;});
+  const acos=sales>0?(spend/sales*100):null,roas=spend>0?(sales/spend):null;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set("an-spend",fmt$(spend));set("an-sales",fmt$(sales));set("an-acos",fmtPct(acos));set("an-roas",roas?roas.toFixed(1)+"x":"-");
+  const wrap=document.getElementById("analyticsTableWrap");
+  if(wrap&&perf.length){
+    const top=[...perf].sort((a,b)=>(parseFloat(b.spend)||0)-(parseFloat(a.spend)||0)).slice(0,50);
+    wrap.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Campaign</th><th>Spend</th><th>Sales</th><th>ACOS</th><th>ROAS</th><th>CPC</th><th>Clicks</th><th>Orders</th></tr></thead><tbody>${top.map(r=>{const roas=parseFloat(r.roas)||null;return`<tr><td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.campaignName||"-"}</td><td class="td-mono">${fmt$(r.spend)}</td><td class="td-mono">${fmt$(r.sales14d||r.sales)}</td><td>${acosBarHtml(parseFloat(r.acos)||null)}</td><td class="td-mono ${roas&&roas>2?"":"td-muted"}">${roas?roas.toFixed(1)+"x":"-"}</td><td class="td-mono td-muted">${fmt$(r.cpc)}</td><td class="td-mono td-muted">${fmtNum(r.clicks)}</td><td class="td-mono td-muted">${fmtNum(r.purchases14d||r.orders)}</td></tr>`;}).join("")}</tbody></table></div>`;
+  }
+  renderTrendChart();
+  const stWrap=document.getElementById("analyticsStWrap");
+  if(stWrap&&store.searchTerms.length){
+    const top=store.searchTerms.slice(0,30);
+    stWrap.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Search Term</th><th>Campaign</th><th>Spend</th><th>Sales</th><th>ACOS</th><th>CPC</th><th>Clicks</th><th>Orders</th></tr></thead><tbody>${top.map(r=>{const acos=r.acos||(r.spend&&(r.sales14d||r.sales)?(parseFloat(r.spend||0)/parseFloat(r.sales14d||r.sales||1)*100):null);return`<tr><td style="font-family:var(--mono);font-size:12.5px">${r.searchTerm||r.query||"-"}</td><td class="td-muted" style="font-size:12px">${r.campaignName||"-"}</td><td class="td-mono">${fmt$(r.spend)}</td><td class="td-mono">${fmt$(r.sales14d||r.sales)}</td><td>${acosBarHtml(acos)}</td><td class="td-mono td-muted">${fmt$(r.cpc)}</td><td class="td-mono td-muted">${fmtNum(r.clicks)}</td><td class="td-mono td-muted">${fmtNum(r.purchases14d||r.orders)}</td></tr>`;}).join("")}</tbody></table></div>`;
   }
 }
 
-// ── KEYWORD TOGGLE ──
-async function toggleKw(btn, kwId) {
-  const row = btn.closest('tr');
-  const idx = parseInt(btn.dataset.idx);
-  const isEnabled = btn.classList.contains('is-enabled');
-  const newState = isEnabled ? 'paused' : 'enabled';
-  btn.textContent = isEnabled ? 'Enable' : 'Pause';
-  btn.classList.toggle('is-enabled'); btn.classList.toggle('is-paused');
-  const stateCell = row.querySelector('[class*="kw-state-cell"]');
-  if (stateCell) stateCell.innerHTML = `<span class="badge ${stateColor(newState)}">${stateLabel(newState)}</span>`;
-  if (kwId && isNaN(kwId)) {
-    try { await API.put('/api/keywords/' + kwId, { state: newState }); }
-    catch(e) { console.warn('State update failed:', e.message); }
-  }
+function renderTrendChart(){
+  const data=store.analytics;if(!data.length)return;
+  const chart=document.getElementById("trendChart"),labels=document.getElementById("trendChartLabels");
+  if(!chart)return;
+  const maxVal=Math.max(...data.map(d=>Math.max(parseFloat(d.spend)||0,parseFloat(d.sales14d||d.sales)||0)),1);
+  chart.innerHTML=data.map(d=>{const spend=parseFloat(d.spend)||0,sales=parseFloat(d.sales14d||d.sales)||0;return`<div class="chart-bar-wrap"><div class="chart-bar sales-bar" style="height:${(sales/maxVal*100).toFixed(1)}%"></div><div class="chart-bar spend-bar" style="height:${(spend/maxVal*100).toFixed(1)}%"></div></div>`;}).join("");
+  if(labels&&data.length>=2){const f=new Date(data[0].date||"").toLocaleDateString("en-US",{month:"short",day:"numeric"});const l=new Date(data[data.length-1].date||"").toLocaleDateString("en-US",{month:"short",day:"numeric"});labels.innerHTML=`<span>${f}</span><span>${l}</span>`;}
 }
 
-// ── RENDER SEARCH TERMS ──
-function renderSearchTerms() {
-  const data = store.searchTerms;
-  const wrap = document.getElementById('stTableWrap');
-  if (!wrap || !data.length) return;
-  wrap.innerHTML = `<div class="table-wrap"><table><thead><tr>
-    <th></th><th>Search Term</th><th>Campaign</th>
-    <th>Impressions</th><th>Clicks</th><th>Spend</th><th>Sales</th><th>ACOS</th><th>Orders</th><th>Action</th>
-  </tr></thead><tbody>${data.slice(0,50).map((st,i) => {
-    const acos = st.acos || (st.cost && st.attributedSales30d ? (st.cost/st.attributedSales30d*100) : null);
-    const isGood = acos && acos < 35;
-    return `<tr>
-      <td><input type="checkbox" ${isGood?'checked':''}/></td>
-      <td style="font-family:var(--mono);font-size:12.5px">${st.query||st.searchTerm||st.search_term||'—'}</td>
-      <td class="td-muted" style="font-size:12px">${st.campaignName||st.campaign_name||'—'}</td>
-      <td class="td-mono td-muted">${fmtNum(st.impressions)}</td>
-      <td class="td-mono td-muted">${fmtNum(st.clicks)}</td>
-      <td class="td-mono">${fmt$(st.cost||st.spend)}</td>
-      <td class="td-mono">${fmt$(st.attributedSales30d||st.sales)}</td>
-      <td>${acosBarHtml(acos)}</td>
-      <td class="td-mono td-muted">${fmtNum(st.attributedConversions30d||st.orders)}</td>
-      <td><span class="badge ${isGood?'badge-green':'badge-red'}" style="cursor:pointer">${isGood?'Import':'Negate'}</span></td>
-    </tr>`;
-  }).join('')}</tbody></table></div>`;
+function renderProducts(){
+  const data=store.perfAsins;const wrap=document.getElementById("productsTableWrap");
+  if(!wrap||!data.length)return;
+  wrap.innerHTML=`<div class="table-wrap"><table><thead><tr><th>ASIN</th><th>Campaign</th><th>Spend</th><th>Sales</th><th>ACOS</th><th>ROAS</th><th>CPC</th><th>Clicks</th><th>Orders</th><th>Units Sold</th></tr></thead><tbody>${data.slice(0,50).map(r=>{const acos=r.acos||(r.spend&&(r.sales14d||r.sales)?(parseFloat(r.spend||0)/parseFloat(r.sales14d||r.sales||1)*100):null);const roas=parseFloat(r.roas)||null;return`<tr><td style="font-family:var(--mono);font-size:12.5px">${r.asin||r.advertisedAsin||"-"}</td><td class="td-muted" style="font-size:12px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.campaignName||"-"}</td><td class="td-mono">${fmt$(r.spend)}</td><td class="td-mono">${fmt$(r.sales14d||r.sales)}</td><td>${acosBarHtml(acos)}</td><td class="td-mono ${roas&&roas>2?"":"td-muted"}">${roas?roas.toFixed(1)+"x":"-"}</td><td class="td-mono td-muted">${fmt$(r.cpc)}</td><td class="td-mono td-muted">${fmtNum(r.clicks)}</td><td class="td-mono td-muted">${fmtNum(r.purchases14d||r.orders)}</td><td class="td-mono td-muted">${fmtNum(r.unitsSoldClicks14d||r.units)}</td></tr>`;}).join("")}</tbody></table></div>`;
 }
 
-// ── RENDER ASINs ──
-function renderASINs() {
-  const data = store.productAds;
-  const grid = document.getElementById('asinGrid');
-  if (!grid || !data.length) return;
-  grid.innerHTML = `<div class="asin-grid">${data.slice(0,12).map(a => {
-    const asin = a.asin || a.sku || '—';
-    const name = a.name || a.title || asin;
-    const state = getState(a);
-    return `<div class="asin-card ${state==='enabled'?'automated':''}">
-      <div class="asin-top">
-        <div><div class="asin-name" style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div><div class="asin-id">${asin}</div></div>
-        <span class="badge ${state==='enabled'?'badge-blue':'badge-gray'}">${state==='enabled'?'Active':'Paused'}</span>
-      </div>
-      <div class="asin-metrics">
-        <div class="asin-metric"><div class="asin-metric-label">ACOS</div><div class="asin-metric-val">${fmtPct(a.acos)}</div></div>
-        <div class="asin-metric"><div class="asin-metric-label">Sales</div><div class="asin-metric-val">${fmt$(a.attributedSales30d||a.sales)}</div></div>
-        <div class="asin-metric"><div class="asin-metric-label">Spend</div><div class="asin-metric-val">${fmt$(a.cost||a.spend)}</div></div>
-        <div class="asin-metric"><div class="asin-metric-label">Campaigns</div><div class="asin-metric-val">${fmtNum(a.campaignCount||a.campaigns||1)}</div></div>
-      </div>
-    </div>`;
-  }).join('')}</div>`;
+function renderASINs(data){
+  const ads=data||store.productAds;const grid=document.getElementById("asinGrid");
+  if(!grid||!ads.length)return;
+  const unique={};ads.forEach(a=>{const k=a.asin||a.sku||a.advertisedAsin;if(k&&!unique[k])unique[k]=a;});
+  const items=Object.values(unique).slice(0,24);
+  grid.innerHTML=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">${items.map(a=>{const asin=a.asin||a.sku||a.advertisedAsin||"-";const perf=store.perfAsins.find(r=>(r.asin||r.advertisedAsin)===asin)||{};return`<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px"><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;font-family:var(--mono)">${asin}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><div style="background:var(--bg);border-radius:var(--radius);padding:7px 9px"><div style="font-size:10px;color:var(--text3);text-transform:uppercase">ACOS</div><div style="font-size:13px;font-family:var(--mono)">${fmtPct(perf.acos)}</div></div><div style="background:var(--bg);border-radius:var(--radius);padding:7px 9px"><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Sales</div><div style="font-size:13px;font-family:var(--mono)">${fmt$(perf.sales14d||perf.sales)}</div></div><div style="background:var(--bg);border-radius:var(--radius);padding:7px 9px"><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Spend</div><div style="font-size:13px;font-family:var(--mono)">${fmt$(perf.spend)}</div></div><div style="background:var(--bg);border-radius:var(--radius);padding:7px 9px"><div style="font-size:10px;color:var(--text3);text-transform:uppercase">CPC</div><div style="font-size:13px;font-family:var(--mono)">${fmt$(perf.cpc)}</div></div></div></div>`;}).join("")}</div>`;
 }
 
-// ── ALGORITHMS ──
-function toggleAlgoCard(id) { document.getElementById(id)?.classList.toggle('expanded'); }
+function filterAsins(){
+  const q=(document.getElementById("asinSearch")?.value||"").toLowerCase();
+  renderASINs(q?store.productAds.filter(a=>(a.asin||a.advertisedAsin||"").toLowerCase().includes(q)):store.productAds);
+}
 
-function toggleAlgo(btn) {
-  const card = btn.closest('.algo-card');
-  const dot = card.querySelector('.algo-dot');
-  if (btn.classList.contains('on')) {
-    btn.classList.replace('on','off'); card.classList.remove('enabled'); dot.classList.remove('on');
+function buildHourGrid(){
+  const grid=document.getElementById("hourGrid");if(!grid)return;grid.innerHTML="";
+  for(let h=0;h<24;h++){const cell=document.createElement("div");cell.className="hour-cell"+([0,1,2,3,4,5].includes(h)?"":" on");cell.textContent=h+"h";cell.onclick=()=>cell.classList.toggle("on");grid.appendChild(cell);}
+}
+
+function buildHeatmap(){
+  const container=document.getElementById("heatmapContainer");if(!container)return;
+  const days=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  let html='<div style="display:grid;grid-template-columns:40px repeat(24,1fr);gap:2px;">';
+  html+='<div></div>'+Array.from({length:24},(_,i)=>`<div style="font-size:9.5px;color:var(--text3);font-family:var(--mono);text-align:center">${i}h</div>`).join("");
+  days.forEach(day=>{html+=`<div style="font-size:10.5px;color:var(--text3);font-family:var(--mono);display:flex;align-items:center">${day}</div>`;for(let h=0;h<24;h++){const v=10+Math.random()*55;const bg=v<20?"rgba(22,163,74,0.8)":v<35?"rgba(22,163,74,0.4)":v<50?"rgba(217,119,6,0.5)":"rgba(220,38,38,0.6)";html+=`<div style="height:22px;border-radius:3px;background:${bg};cursor:pointer" title="${day} ${h}:00"></div>`;};});
+  html+="</div>";container.innerHTML=html;
+}
+
+const ALGO_IDS=["ac-dynbid","ac-import","ac-neg","ac-negword","ac-daypart","ac-placement","ac-status","ac-blacklist","ac-whitelist","ac-revive","ac-budget","ac-defbid"];
+
+function getAlgoConfig(id){
+  const inputs=document.querySelectorAll(`#${id} [id^="f-${id}-"]`);
+  const config={};inputs.forEach((inp,i)=>{config["f"+i]=inp.value;});return config;
+}
+
+function applyAlgoConfig(id,config){
+  if(!config)return;
+  Object.entries(config).forEach(([k,v])=>{const inp=document.getElementById(`f-${id}-${k.replace("f","")}`);if(inp)inp.value=v;});
+}
+
+function applyAlgorithmSettings(algos){
+  algos.forEach(a=>{
+    const id=a.algorithm_id;
+    const toggleBtn=document.getElementById("toggle-"+id);
+    const dot=document.getElementById("dot-"+id);
+    const card=document.getElementById(id);
+    if(!toggleBtn||!card)return;
+    if(a.enabled){toggleBtn.classList.remove("off");toggleBtn.classList.add("on");card.classList.add("enabled");if(dot)dot.classList.add("on");}
+    else{toggleBtn.classList.remove("on");toggleBtn.classList.add("off");card.classList.remove("enabled");if(dot)dot.classList.remove("on");}
+    if(a.config)applyAlgoConfig(id,a.config);
+  });
+  updateAlgoCount();
+}
+
+function toggleAlgoCard(id){document.getElementById(id)?.classList.toggle("expanded");}
+
+function toggleAlgo(btn,id){
+  const card=document.getElementById(id),dot=document.getElementById("dot-"+id);
+  if(btn.classList.contains("on")){btn.classList.replace("on","off");card?.classList.remove("enabled");dot?.classList.remove("on");}
+  else{btn.classList.replace("off","on");card?.classList.add("enabled");dot?.classList.add("on");}
+  updateAlgoCount();
+  const enabled=btn.classList.contains("on");
+  API.post("/api/algorithms/"+id,{enabled,config:getAlgoConfig(id)}).catch(()=>{});
+}
+
+function updateAlgoCount(){
+  const active=ALGO_IDS.filter(id=>document.getElementById("toggle-"+id)?.classList.contains("on")).length;
+  const el=document.getElementById("algoCount");if(el)el.textContent=active+" of "+ALGO_IDS.length+" active";
+}
+
+async function saveAlgo(id){
+  const msg=document.getElementById("saved-"+id);
+  const btn=document.getElementById("toggle-"+id);
+  const enabled=btn?.classList.contains("on")||false;
+  const config=getAlgoConfig(id);
+  try{await API.post("/api/algorithms/"+id,{enabled,config});if(msg){msg.classList.add("show");setTimeout(()=>msg.classList.remove("show"),2500);}}
+  catch(e){console.warn("Save algo:",e);}
+}
+
+function openCampDrawer(){
+  document.getElementById("campDrawer").classList.add("open");
+  document.getElementById("campDrawerOverlay").classList.add("open");
+  document.getElementById("nc-startdate").value=new Date().toISOString().split("T")[0];
+  populatePortfolioFilters();
+}
+function closeCampDrawer(){document.getElementById("campDrawer").classList.remove("open");document.getElementById("campDrawerOverlay").classList.remove("open");}
+
+async function submitNewCampaign(){
+  const btn=document.getElementById("nc-submit-btn"),errEl=document.getElementById("nc-error");
+  const adtype=document.getElementById("nc-adtype").value;
+  const name=document.getElementById("nc-name").value.trim();
+  const budget=parseFloat(document.getElementById("nc-budget").value);
+  const startDate=document.getElementById("nc-startdate").value.replace(/-/g,"");
+  const strategy=document.getElementById("nc-strategy").value;
+  const portfolioId=document.getElementById("nc-portfolio").value;
+  const adGroupName=document.getElementById("nc-adgroup").value.trim()||"Default";
+  const defaultBid=parseFloat(document.getElementById("nc-defaultbid").value)||0.75;
+  errEl.style.display="none";
+  if(!name){errEl.style.display="block";errEl.textContent="Campaign name is required.";return;}
+  if(!budget||budget<1){errEl.style.display="block";errEl.textContent="Daily budget must be at least $1.";return;}
+  btn.textContent="Creating...";btn.classList.add("loading");
+  try{
+    const isAuto=adtype.includes("AUTO");
+    const type=adtype.startsWith("SB")?"sb_campaigns":adtype.startsWith("SD")?"sd_campaigns":"sp_campaigns";
+    const payload={type,name,state:"ENABLED",targetingType:isAuto?"AUTO":"MANUAL",budget:{budget,budgetType:"DAILY"},startDate,dynamicBidding:{strategy,placementBidding:[]},adGroupName,defaultBid,...(portfolioId?{portfolioId}:{})};
+    const result=await API.post("/api/campaigns",payload);
+    if(result.success){closeCampDrawer();document.getElementById("nc-name").value="";setTimeout(()=>doRefresh(),500);}
+    else{errEl.style.display="block";errEl.textContent=result.error||"Failed to create campaign.";}
+  }catch(e){errEl.style.display="block";errEl.textContent=e.message||"Error.";}
+  btn.textContent="Create Campaign";btn.classList.remove("loading");
+}
+
+function openAddCampDrawer(term){
+  document.getElementById("ac-term").value=term;
+  const campSel=document.getElementById("ac-campaign");
+  campSel.innerHTML='<option value="">Select campaign...</option>';
+  store.campaigns.filter(c=>getState(c)==="ENABLED"&&getCampType(c).toUpperCase()==="MANUAL").forEach(c=>{const opt=document.createElement("option");opt.value=c.campaignId;opt.textContent=campName(c);campSel.appendChild(opt);});
+  document.getElementById("addCampDrawer").classList.add("open");
+  document.getElementById("addCampDrawerOverlay").classList.add("open");
+}
+function closeAddCampDrawer(){document.getElementById("addCampDrawer").classList.remove("open");document.getElementById("addCampDrawerOverlay").classList.remove("open");}
+
+async function loadAdGroupsForCamp(){
+  const campId=document.getElementById("ac-campaign").value;
+  const sel=document.getElementById("ac-adgroup");
+  sel.innerHTML='<option value="">Loading...</option>';
+  if(!campId){sel.innerHTML='<option value="">Select campaign first</option>';return;}
+  // Try to get from stored ad groups first
+  const groups=store.adGroups.filter(g=>g.campaignId===campId);
+  if(groups.length){
+    sel.innerHTML='<option value="">Select ad group...</option>';
+    groups.forEach(g=>{const opt=document.createElement("option");opt.value=g.adGroupId||g.id||"";opt.textContent=g.name||g.adGroupName||"Ad Group";sel.appendChild(opt);});
   } else {
-    btn.classList.replace('off','on'); card.classList.add('enabled'); dot.classList.add('on');
-  }
-  updateAlgoCount();
-}
-
-function updateAlgoCount() {
-  const total = document.querySelectorAll('.algo-card').length;
-  const active = document.querySelectorAll('.algo-card.enabled').length;
-  const el = document.getElementById('algoCount');
-  if (el) el.textContent = active + ' of ' + total + ' active';
-}
-
-async function saveAlgo(id) {
-  const msg = document.getElementById('saved-' + id);
-  if (msg) { msg.classList.add('show'); setTimeout(() => msg.classList.remove('show'), 2500); }
-  try {
-    const card = document.getElementById(id);
-    const enabled = card?.querySelector('.toggle')?.classList.contains('on') || false;
-    const inputs = card?.querySelectorAll('.algo-input,.algo-select,.algo-textarea') || [];
-    const config = {};
-    inputs.forEach((inp, i) => { config['field_'+i] = inp.value; });
-    await API.post('/api/algorithms/' + id, { enabled, config });
-  } catch(e) { console.warn('Save algo failed:', e.message); }
-}
-
-// ── HOUR GRID (dayparting) ──
-function buildHourGrid() {
-  const grid = document.getElementById('hourGrid');
-  if (!grid) return;
-  const off = [0,1,2,3,4,5];
-  for (let h = 0; h < 24; h++) {
-    const cell = document.createElement('div');
-    cell.className = 'hour-cell' + (off.includes(h) ? '' : ' on');
-    cell.textContent = h + 'h';
-    cell.onclick = () => cell.classList.toggle('on');
-    grid.appendChild(cell);
+    try{
+      const result=await API.get("/api/ad-groups");
+      const all=normalizeArray(result.data||result);
+      store.adGroups=all;
+      const campGroups=all.filter(g=>g.campaignId===campId);
+      sel.innerHTML='<option value="">Select ad group...</option>';
+      campGroups.forEach(g=>{const opt=document.createElement("option");opt.value=g.adGroupId||g.id||"";opt.textContent=g.name||g.adGroupName||"Ad Group";sel.appendChild(opt);});
+      if(!campGroups.length)sel.innerHTML='<option value="">No ad groups found</option>';
+    }catch(e){sel.innerHTML='<option value="">Error loading</option>';}
   }
 }
 
-// ── HEATMAP (dayparting page) ──
-function buildHeatmap() {
-  const container = document.getElementById('heatmapContainer');
-  if (!container) return;
-  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const hours = Array.from({length:24},(_,i)=>i);
-  let html = '<div style="display:grid;grid-template-columns:40px repeat(24,1fr);gap:2px;">';
-  html += '<div></div>' + hours.map(h => `<div style="font-size:9.5px;color:var(--text3);font-family:var(--mono);text-align:center">${h}h</div>`).join('');
-  days.forEach(day => {
-    html += `<div style="font-size:10.5px;color:var(--text3);font-family:var(--mono);display:flex;align-items:center">${day}</div>`;
-    hours.forEach(() => {
-      const v = 10 + Math.random() * 55;
-      const bg = v < 20 ? 'rgba(22,163,74,0.8)' : v < 35 ? 'rgba(22,163,74,0.4)' : v < 50 ? 'rgba(217,119,6,0.5)' : 'rgba(220,38,38,0.6)';
-      html += `<div style="height:22px;border-radius:3px;background:${bg};cursor:pointer" title="${day} ${Math.round(v)}% ACOS"></div>`;
-    });
-  });
-  html += '</div>';
-  container.innerHTML = html;
+async function submitAddToCampaign(){
+  const btn=document.getElementById("ac-submit-btn"),errEl=document.getElementById("ac-error");
+  const term=document.getElementById("ac-term").value;
+  const campaignId=document.getElementById("ac-campaign").value;
+  const adGroupId=document.getElementById("ac-adgroup").value;
+  const matchType=document.getElementById("ac-match").value;
+  const bid=parseFloat(document.getElementById("ac-bid").value);
+  errEl.style.display="none";
+  if(!campaignId){errEl.style.display="block";errEl.textContent="Select a campaign.";return;}
+  if(!adGroupId){errEl.style.display="block";errEl.textContent="Select an ad group.";return;}
+  btn.textContent="Adding...";btn.classList.add("loading");
+  try{
+    const result=await API.post("/api/keywords",{keywordText:term,matchType,bid,campaignId,adGroupId,state:"ENABLED"});
+    if(result.success)closeAddCampDrawer();
+    else{errEl.style.display="block";errEl.textContent=result.error||"Failed.";}
+  }catch(e){errEl.style.display="block";errEl.textContent=e.message;}
+  btn.textContent="Add Keyword";btn.classList.remove("loading");
 }
 
-// ── TABS ──
-function switchTab(tabEl, tabId) {
-  document.querySelectorAll('#page-analytics .tab').forEach(t => t.classList.remove('active'));
-  tabEl.classList.add('active');
-  ['tab-organic','tab-trends','tab-searchterms-tab','tab-competing'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = id === tabId ? 'block' : 'none';
-  });
+function switchTab(tabEl,tabId){
+  document.querySelectorAll("#page-analytics .tab").forEach(t=>t.classList.remove("active"));
+  tabEl.classList.add("active");
+  ["tab-organic","tab-trends","tab-st"].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=id===tabId?"block":"none";});
+  if(tabId==="tab-trends")renderTrendChart();
 }
 
-// ── NAVIGATION ──
-const pageTitles = {
-  dashboard:'Dashboard', analytics:'Analytics', campaigns:'Campaigns',
-  keywords:'Keywords', searchterms:'Search Terms', algorithms:'Algorithms',
-  asins:'ASINs', dayparting:'Day Parting', products:'Product Performance',
-  restock:'Restock Forecast',
-};
+const pageTitles={dashboard:"Dashboard",analytics:"Analytics",campaigns:"Campaigns",keywords:"Keywords",searchterms:"Search Terms",portfolios:"Portfolios",algorithms:"Algorithms",asins:"ASINs",dayparting:"Day Parting",products:"Product Performance"};
 
-function nav(pageId, navEl) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const page = document.getElementById('page-' + pageId);
-  if (page) page.classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  if (navEl) navEl.classList.add('active');
-  document.getElementById('pageTitle').textContent = pageTitles[pageId] || pageId;
+function nav(pageId,navEl){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  const page=document.getElementById("page-"+pageId);if(page)page.classList.add("active");
+  document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));
+  if(navEl)navEl.classList.add("active");
+  document.getElementById("pageTitle").textContent=pageTitles[pageId]||pageId;
 }
 
-// ── STARTUP ──
-(async () => {
-  buildHourGrid();
-  buildHeatmap();
-  updateAlgoCount();
-
-  // Set today's date in topbar
-  document.getElementById('lastSyncBadge').textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-
-  try {
-    const status = await fetch('/auth/status', { credentials: 'include' });
-    const data = await status.json();
-    if (data.loggedIn) {
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('appShell').style.display = 'flex';
+(async()=>{
+  const savedTheme=localStorage.getItem("adscale-theme")||"light";
+  applyTheme(savedTheme);
+  buildHourGrid();buildHeatmap();updateAlgoCount();
+  document.getElementById("lastSyncBadge").textContent=new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+  try{
+    const status=await fetch("/auth/status",{credentials:"include"});
+    const data=await status.json();
+    if(data.loggedIn){
+      document.getElementById("loginScreen").style.display="none";
+      document.getElementById("appShell").style.display="flex";
       updateSyncStatus(data.lastSync);
-      if (data.lastSync) await loadAllData();
+      await loadSettings();
+      if(data.lastSync)await loadAllData();
     }
-  } catch(e) {
-    // Login screen stays visible
-  }
+  }catch(e){}
 })();
-</script>
-</body>
-</html>
+</script></body></html>
