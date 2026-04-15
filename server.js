@@ -102,6 +102,73 @@ async function mapCall(method, params = {}) {
     const err = response.data?.error;
     throw new Error(err?.message || `MAP no result for: ${method}`);
   }
+  // Return the full result — callers will extract what they need
+  return result;
+}
+
+// Extract text from a MAP MCP result content blocks
+function extractText(result) {
+  if (!result) return '';
+  if (Array.isArray(result.content)) {
+    return result.content
+      .filter(b => b.type === 'text')
+      .map(b => b.text || '')
+      .join('\n');
+  }
+  if (typeof result === 'string') return result;
+  return JSON.stringify(result);
+}
+
+// Extract data rows from a MAP MCP result
+// MAP report analyst returns data in content blocks of type 'tool_result' or embedded JSON
+function extractData(result) {
+  if (!result) return [];
+
+  // Check for data field directly
+  if (Array.isArray(result.data)) return result.data;
+
+  // Check content blocks
+  if (Array.isArray(result.content)) {
+    for (const block of result.content) {
+      // Tool result blocks contain the actual data
+      if (block.type === 'tool_result' && Array.isArray(block.content)) {
+        for (const inner of block.content) {
+          if (inner.type === 'text' && inner.text) {
+            try { const parsed = JSON.parse(inner.text); if (Array.isArray(parsed)) return parsed; if (parsed.data) return parsed.data; } catch {}
+          }
+        }
+      }
+      // Text blocks may contain JSON
+      if (block.type === 'text' && block.text) {
+        // Try parsing the whole thing
+        try { const parsed = JSON.parse(block.text); if (Array.isArray(parsed)) return parsed; if (parsed.data) return parsed.data; } catch {}
+        // Try extracting JSON array from text
+        const match = block.text.match(/\[[\s\S]*\]/);
+        if (match) { try { const arr = JSON.parse(match[0]); if (Array.isArray(arr) && arr.length > 0) return arr; } catch {} }
+      }
+    }
+  }
+
+  // Last resort — stringify and search
+  const str = JSON.stringify(result);
+  const match = str.match(/\[[\s\S]*?\]/);
+  if (match) { try { const arr = JSON.parse(match[0]); if (Array.isArray(arr) && arr.length > 0) return arr; } catch {} }
+
+  return [];
+}
+
+async function mapListResources(resourceType, filters = {}) {
+  const result = await mapCall('tools/call', {
+    name: 'list_resources',
+    arguments: {
+      account_id: MAP_ACCOUNT.accountId,
+      integration_id: MAP_ACCOUNT.integrationId,
+      // brand_id omitted intentionally
+      resource_type: resourceType,
+      filters,
+    },
+  });
+  // list_resources returns JSON in text block — parse it
   if (Array.isArray(result.content)) {
     for (const block of result.content) {
       if (block.type === 'text' && block.text) {
@@ -110,19 +177,6 @@ async function mapCall(method, params = {}) {
     }
   }
   return result;
-}
-
-async function mapListResources(resourceType, filters = {}) {
-  return mapCall('tools/call', {
-    name: 'list_resources',
-    arguments: {
-      account_id: MAP_ACCOUNT.accountId,
-      integration_id: MAP_ACCOUNT.integrationId,
-      // brand_id omitted — not required for list_resources and can cause validation errors
-      resource_type: resourceType,
-      filters,
-    },
-  });
 }
 
 async function mapUpdateResources(resourceType, resources, note = '') {
@@ -152,6 +206,7 @@ async function mapCreateResources(resourceType, resources, note = '') {
 }
 
 async function askReportAnalyst(question, fast = true) {
+  // Returns raw MCP result — use extractData() to get rows
   return mapCall('tools/call', {
     name: 'ask_report_analyst',
     arguments: {
@@ -178,13 +233,7 @@ function normalizeMapResult(result) {
   return [];
 }
 
-function parseReportJson(raw) {
-  if (!raw) return [];
-  const str = typeof raw === 'string' ? raw : JSON.stringify(raw);
-  const match = str.match(/\[[\s\S]*\]/);
-  if (match) { try { return JSON.parse(match[0]); } catch {} }
-  return [];
-}
+// parseReportJson replaced by extractData()
 
 // ----------------------------------------------------------------
 // Main sync
@@ -209,11 +258,15 @@ async function syncFromMAP() {
 
   async function safeReport(cacheKey, question, fast = true) {
     try {
-      const raw = await askReportAnalyst(question, fast);
-      const rows = parseReportJson(raw);
+      const result = await askReportAnalyst(question, fast);
+      // Debug: log result structure so we can see what MAP returns
+      const resultKeys = result ? Object.keys(result) : [];
+      const contentTypes = Array.isArray(result?.content) ? result.content.map(b => b.type).join(',') : 'none';
+      console.log(`  Report ${cacheKey} result keys: [${resultKeys}] content types: [${contentTypes}]`);
+      const rows = extractData(result);
       await cacheSet(cacheKey, rows);
       synced++;
-      console.log(`  Synced: ${cacheKey} (${rows.length} rows)`);
+      console.log(`  Synced: ${cacheKey} (${rows.length} rows) — text: ${extractText(result).slice(0,100)}`);
       return rows;
     } catch (err) {
       console.error(`  Failed report: ${cacheKey} — ${err.message}`);
