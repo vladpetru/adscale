@@ -534,11 +534,11 @@ tbody td:last-child { text-align: right; }
       <!-- DASHBOARD -->
       <div class="page active" id="page-dashboard">
         <div class="metric-grid" id="dashMetrics">
-          <div class="metric-card"><div class="metric-label">Total Sales</div><div class="metric-value" id="m-sales">—</div><div class="metric-delta delta-flat" id="m-sales-d">Sync to load</div></div>
-          <div class="metric-card"><div class="metric-label">Ad Spend</div><div class="metric-value" id="m-spend">—</div><div class="metric-delta delta-flat" id="m-spend-d">Sync to load</div></div>
-          <div class="metric-card"><div class="metric-label">ACOS</div><div class="metric-value" id="m-acos">—</div><div class="metric-delta delta-flat" id="m-acos-d">Sync to load</div></div>
-          <div class="metric-card"><div class="metric-label">ROAS</div><div class="metric-value" id="m-roas">—</div><div class="metric-delta delta-flat" id="m-roas-d">Sync to load</div></div>
-          <div class="metric-card"><div class="metric-label">Campaigns</div><div class="metric-value" id="m-camps">—</div><div class="metric-delta delta-flat" id="m-camps-d">Sync to load</div></div>
+          <div class="metric-card"><div class="metric-label">Live Campaigns</div><div class="metric-value" id="m-sales">—</div><div class="metric-delta delta-flat" id="m-sales-d">Sync to load</div></div>
+          <div class="metric-card"><div class="metric-label">Total Daily Budget</div><div class="metric-value" id="m-spend">—</div><div class="metric-delta delta-flat" id="m-spend-d">Sync to load</div></div>
+          <div class="metric-card"><div class="metric-label">ACOS</div><div class="metric-value" id="m-acos">—</div><div class="metric-delta delta-flat" id="m-acos-d">Requires reporting</div></div>
+          <div class="metric-card"><div class="metric-label">ROAS</div><div class="metric-value" id="m-roas">—</div><div class="metric-delta delta-flat" id="m-roas-d">Requires reporting</div></div>
+          <div class="metric-card"><div class="metric-label">Total Campaigns</div><div class="metric-value" id="m-camps">—</div><div class="metric-delta delta-flat" id="m-camps-d">Sync to load</div></div>
         </div>
 
         <div id="dashRefreshBanner" class="refresh-banner">
@@ -919,7 +919,7 @@ const API = {
 };
 
 // ── CACHE ──
-const store = { campaigns: [], keywords: [], portfolios: [], searchTerms: [], productAds: [] };
+const store = { campaigns: [], keywords: [], portfolios: [], searchTerms: [], productAds: [], performanceMap: {}, kwPerformance: [] };
 
 // ── LOGIN ──
 function showLogin() {
@@ -1013,19 +1013,51 @@ function updateSyncStatus(timestamp) {
 // ── LOAD ALL DATA ──
 async function loadAllData() {
   try {
-    const [camps, kws, portfolios, searchT, prodAds] = await Promise.allSettled([
+    const [camps, kws, portfolios, searchT, prodAds, perfMap, kwPerf] = await Promise.allSettled([
       API.get('/api/campaigns'),
       API.get('/api/keywords'),
       API.get('/api/portfolios'),
       API.get('/api/search-terms'),
       API.get('/api/product-ads'),
+      API.get('/api/performance-map'),
+      API.get('/api/kw-performance'),
     ]);
 
-    if (camps.value?.data)      { store.campaigns   = normalizeArray(camps.value.data);   renderCampaigns(); renderDashboard(); }
-    if (kws.value?.data)        { store.keywords     = normalizeArray(kws.value.data);     renderKeywords(); }
-    if (portfolios.value?.data) { store.portfolios   = normalizeArray(portfolios.value.data); renderPortfolios(); }
-    if (searchT.value?.data)    { store.searchTerms  = normalizeArray(searchT.value.data); renderSearchTerms(); }
-    if (prodAds.value?.data)    { store.productAds   = normalizeArray(prodAds.value.data); renderASINs(); }
+    // Store performance map first so campaign merge can use it
+    if (perfMap.value?.data) {
+      store.performanceMap = perfMap.value.data || {};
+    }
+    if (kwPerf.value?.data) {
+      store.kwPerformance = normalizeArray(kwPerf.value.data);
+    }
+
+    if (camps.value?.data) {
+      // Merge campaign structure with performance data
+      const rawCamps = normalizeArray(camps.value.data);
+      store.campaigns = rawCamps.map(c => {
+        const id = String(c.campaignId || c.campaign_id || '');
+        const perf = store.performanceMap?.[id] || {};
+        return { ...c, ...perf };
+      });
+      renderCampaigns(); renderDashboard();
+    }
+    if (kws.value?.data) {
+      // Merge keywords with keyword performance
+      const rawKws = normalizeArray(kws.value.data);
+      const kwPerfById = {};
+      (store.kwPerformance || []).forEach(k => {
+        if (k.keywordId) kwPerfById[String(k.keywordId)] = k;
+      });
+      store.keywords = rawKws.map(k => {
+        const id = String(k.keywordId || k.keyword_id || '');
+        const perf = kwPerfById[id] || {};
+        return { ...k, ...perf };
+      });
+      renderKeywords();
+    }
+    if (portfolios.value?.data) { store.portfolios  = normalizeArray(portfolios.value.data); renderPortfolios(); }
+    if (searchT.value?.data)    { store.searchTerms = normalizeArray(searchT.value.data);    renderSearchTerms(); }
+    if (prodAds.value?.data)    { store.productAds  = normalizeArray(prodAds.value.data);    renderASINs(); }
   } catch(e) { console.warn('Load error:', e); }
 }
 
@@ -1062,6 +1094,13 @@ function stateLabel(s) {
 function campName(c) { return c.name || c.campaignName || c.campaign_name || 'Unnamed'; }
 function kwText(k) { return k.keywordText || k.keyword_text || k.text || k.query || '—'; }
 function getState(item) { return (item.state || item.status || item.enabled || '').toString().toLowerCase(); }
+function getBudget(c) {
+  if (c.budget && typeof c.budget === 'object') return c.budget.budget;
+  return c.budget || c.dailyBudget || c.daily_budget || null;
+}
+function getCampType(c) {
+  return c.targetingType || c.campaignType || c.campaign_type || c._adType || '—';
+}
 
 // ── ACOS BAR HTML ──
 function acosBarHtml(val) {
@@ -1075,32 +1114,33 @@ function renderDashboard() {
   const camps = store.campaigns;
   if (!camps.length) return;
 
-  let totalSpend = 0, totalSales = 0, totalImpressions = 0;
+  let totalBudget = 0, totalSpend = 0, totalSales = 0;
+  const liveCamps = camps.filter(c => getState(c) === 'enabled');
   camps.forEach(c => {
-    totalSpend += parseFloat(c.cost || c.spend || c.impressionCount || 0);
-    totalSales += parseFloat(c.attributedSales30d || c.sales || c.revenue || 0);
-    totalImpressions += parseFloat(c.impressions || 0);
+    totalBudget += getBudget(c) || 0;
+    totalSpend  += parseFloat(c.spend)  || 0;
+    totalSales  += parseFloat(c.sales)  || 0;
   });
-  const acos = totalSales > 0 ? (totalSpend / totalSales * 100) : 0;
-  const roas = totalSpend > 0 ? (totalSales / totalSpend) : 0;
+  const acos = totalSales > 0 ? (totalSpend / totalSales * 100) : null;
+  const roas = totalSpend > 0 ? (totalSales / totalSpend)       : null;
 
   const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
-  set('m-sales', fmt$(totalSales) === '$0.00' ? `${camps.length} loaded` : fmt$(totalSales));
-  set('m-spend', fmt$(totalSpend) === '$0.00' ? '—' : fmt$(totalSpend));
-  set('m-acos', acos > 0 ? fmtPct(acos) : '—');
-  set('m-roas', roas > 0 ? roas.toFixed(1) + 'x' : '—');
+  set('m-sales', totalSales > 0 ? fmt$(totalSales) : liveCamps.length + ' live');
+  set('m-spend', totalSpend > 0 ? fmt$(totalSpend) : fmt$(totalBudget) + '/day budget');
+  set('m-acos',  acos ? fmtPct(acos) : '—');
+  set('m-roas',  roas ? roas.toFixed(1) + 'x' : '—');
   set('m-camps', camps.length);
-  set('m-camps-d', 'active campaigns');
+  set('m-camps-d', liveCamps.length + ' live');
 
   // Top 5 campaigns by budget
-  const top5 = [...camps].sort((a,b) => parseFloat(b.dailyBudget||b.budget||0) - parseFloat(a.dailyBudget||a.budget||0)).slice(0,5);
+  const top5 = [...camps].sort((a,b) => (getBudget(b)||0) - (getBudget(a)||0)).slice(0,5);
   const dashCamps = document.getElementById('dashCampaigns');
   if (dashCamps && top5.length) {
     dashCamps.innerHTML = `<table><thead><tr><th>Campaign</th><th>State</th><th>Budget</th><th>ACOS</th></tr></thead><tbody>${
       top5.map(c => `<tr>
         <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${campName(c)}</td>
         <td><span class="badge ${stateColor(getState(c))}">${stateLabel(getState(c))}</span></td>
-        <td class="td-mono">${fmt$(c.dailyBudget||c.budget)}</td>
+        <td class="td-mono">${fmt$(getBudget(c))}</td>
         <td>${acosBarHtml(c.acos||c.attributedSales30dSameSKU)}</td>
       </tr>`).join('')
     }</tbody></table>`;
@@ -1137,17 +1177,21 @@ function renderCampaigns(camps) {
     const state = getState(c);
     const acos = c.acos || (c.cost && c.attributedSales30d ? (c.cost/c.attributedSales30d*100) : null);
     const roas = c.cost && c.attributedSales30d ? (c.attributedSales30d/c.cost) : null;
-    return `<tr data-id="${c.campaignId||c.campaign_id||''}" data-portfolio="${c.portfolioId||c.portfolio_id||''}" data-state="${state}" data-type="${(c.campaignType||c.campaign_type||'').toLowerCase()}">
+    const spend = parseFloat(c.spend) || 0;
+    const sales = parseFloat(c.sales) || 0;
+    const acos  = c.acos != null ? parseFloat(c.acos) : (sales > 0 ? spend/sales*100 : null);
+    const roas  = c.roas != null ? parseFloat(c.roas) : (spend > 0 ? sales/spend : null);
+    return `<tr data-id="${c.campaignId||c.campaign_id||''}" data-portfolio="${c.portfolioId||c.portfolio_id||''}" data-state="${state}" data-type="${getCampType(c).toLowerCase()}">
       <td style="max-width:220px"><span class="status-dot ${state==='enabled'?'dot-green':state==='paused'?'dot-amber':'dot-gray'}"></span>${campName(c)}</td>
-      <td><span class="badge badge-blue">${c.campaignType||c.campaign_type||'—'}</span></td>
+      <td><span class="badge badge-blue">${getCampType(c)}</span></td>
       <td><span class="badge ${stateColor(state)}">${stateLabel(state)}</span></td>
-      <td class="td-mono">${fmt$(c.dailyBudget||c.budget)}</td>
-      <td class="td-mono">${fmt$(c.cost||c.spend)}</td>
-      <td class="td-mono">${fmt$(c.attributedSales30d||c.sales)}</td>
-      <td>${acosBarHtml(acos)}</td>
-      <td class="td-mono ${roas>2?'':'td-muted'}">${roas ? roas.toFixed(1)+'x' : '—'}</td>
-      <td class="td-mono td-muted">${fmtNum(c.impressions)}</td>
-      <td class="td-mono td-muted">${fmtNum(c.clicks)}</td>
+      <td class="td-mono">${fmt$(getBudget(c))}</td>
+      <td class="td-mono">${spend > 0 ? fmt$(spend) : '—'}</td>
+      <td class="td-mono">${sales > 0 ? fmt$(sales) : '—'}</td>
+      <td>${acos != null ? acosBarHtml(acos) : '<span class="td-muted">—</span>'}</td>
+      <td class="td-mono ${roas && roas > 2 ? '' : 'td-muted'}">${roas ? roas.toFixed(1)+'x' : '—'}</td>
+      <td class="td-mono td-muted">${fmtNum(c.impressions) || '—'}</td>
+      <td class="td-mono td-muted">${fmtNum(c.clicks) || '—'}</td>
     </tr>`;
   }).join('')}</tbody></table></div>`;
 }
