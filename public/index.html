@@ -1181,8 +1181,6 @@ function renderCampaigns(camps) {
     <th>Spend</th><th>Sales</th><th>ACOS</th><th>ROAS</th><th>Impressions</th><th>Clicks</th>
   </tr></thead><tbody>${data.map(c => {
     const state = getState(c);
-    const acos = c.acos || (c.cost && c.attributedSales30d ? (c.cost/c.attributedSales30d*100) : null);
-    const roas = c.cost && c.attributedSales30d ? (c.attributedSales30d/c.cost) : null;
     const spend = parseFloat(c.spend) || 0;
     const sales = parseFloat(c.sales) || 0;
     const acos  = c.acos != null ? parseFloat(c.acos) : (sales > 0 ? spend/sales*100 : null);
