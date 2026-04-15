@@ -222,7 +222,6 @@ async function mapCreateResources(resourceType, resources, note = '') {
 }
 
 async function askReportAnalyst(question, fast = true) {
-  // Use account_id (UUID) for scoping — brand_ids may not work if brand has no report data
   return mapCall('tools/call', {
     name: 'ask_report_analyst',
     arguments: {
@@ -232,6 +231,31 @@ async function askReportAnalyst(question, fast = true) {
       question,
     },
   });
+}
+
+// Dump full raw response for debugging
+async function askReportAnalystRaw(question, fast = true) {
+  const response = await axios.post(MAP_ENDPOINT, {
+    jsonrpc: '2.0', id: mcpCallId++,
+    method: 'tools/call',
+    params: {
+      name: 'ask_report_analyst',
+      arguments: {
+        account_ids: [MAP_ACCOUNT.accountId],
+        integration_ids: [MAP_ACCOUNT.integrationId],
+        fast,
+        question,
+      },
+    },
+  }, {
+    headers: {
+      'Authorization': `Bearer ${MAP_TOKEN}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json, text/event-stream',
+    },
+    timeout: 90000,
+  });
+  return response.data; // return the complete raw HTTP response body
 }
 
 // ----------------------------------------------------------------
@@ -643,6 +667,14 @@ app.post('/api/algorithms/bulk', requireAuth, async (req, res) => {
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', mapConfigured: !!MAP_TOKEN, dbConnected: !!db, timestamp: new Date().toISOString() });
+});
+
+// Debug: dump raw ask_report_analyst HTTP response so we can see the exact structure
+app.get('/api/debug/report-raw', requireAuth, async (req, res) => {
+  try {
+    const raw = await askReportAnalystRaw('Last 7 days total spend across all SP campaigns. Give me one number.', true);
+    res.json(raw);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('*', (req, res) => {
