@@ -119,64 +119,80 @@ function extractText(result) {
   return JSON.stringify(result);
 }
 
-// Extract data rows from a MAP MCP result
-// MAP report analyst returns data in content blocks of type 'tool_result' or embedded JSON
+// Extract data rows from a MAP MCP report analyst result
 function extractData(result) {
   if (!result) return [];
 
-  // Check for data field directly
+  // Direct data field
   if (Array.isArray(result.data)) return result.data;
 
-  // Check content blocks
-  if (Array.isArray(result.content)) {
-    for (const block of result.content) {
-      // Tool result blocks contain the actual data
-      if (block.type === 'tool_result' && Array.isArray(block.content)) {
-        for (const inner of block.content) {
-          if (inner.type === 'text' && inner.text) {
-            try { const parsed = JSON.parse(inner.text); if (Array.isArray(parsed)) return parsed; if (parsed.data) return parsed.data; } catch {}
-          }
-        }
-      }
-      // Text blocks may contain JSON
-      if (block.type === 'text' && block.text) {
-        // Try parsing the whole thing
-        try { const parsed = JSON.parse(block.text); if (Array.isArray(parsed)) return parsed; if (parsed.data) return parsed.data; } catch {}
-        // Try extracting JSON array from text
-        const match = block.text.match(/\[[\s\S]*\]/);
-        if (match) { try { const arr = JSON.parse(match[0]); if (Array.isArray(arr) && arr.length > 0) return arr; } catch {} }
-      }
+  // Flatten all content blocks (including nested tool_result blocks)
+  const blocks = [];
+  function collectBlocks(content) {
+    if (!Array.isArray(content)) return;
+    for (const block of content) {
+      blocks.push(block);
+      if (block.content) collectBlocks(block.content);
     }
   }
+  collectBlocks(result.content || []);
 
-  // Last resort — stringify and search
-  const str = JSON.stringify(result);
-  const match = str.match(/\[[\s\S]*?\]/);
-  if (match) { try { const arr = JSON.parse(match[0]); if (Array.isArray(arr) && arr.length > 0) return arr; } catch {} }
-
+  for (const block of blocks) {
+    if (!block.text) continue;
+    // Try full JSON parse
+    try {
+      const parsed = JSON.parse(block.text);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (parsed && Array.isArray(parsed.data) && parsed.data.length > 0) return parsed.data;
+      if (parsed && Array.isArray(parsed.rows) && parsed.rows.length > 0) return parsed.rows;
+      if (parsed && Array.isArray(parsed.results) && parsed.results.length > 0) return parsed.results;
+    } catch {}
+    // Try extracting JSON array substring
+    const match = block.text.match(/\[[\s\S]*\]/);
+    if (match) {
+      try {
+        const arr = JSON.parse(match[0]);
+        if (Array.isArray(arr) && arr.length > 0 && typeof arr[0] === 'object') return arr;
+      } catch {}
+    }
+  }
   return [];
 }
 
-async function mapListResources(resourceType, filters = {}) {
-  const result = await mapCall('tools/call', {
-    name: 'list_resources',
-    arguments: {
-      account_id: MAP_ACCOUNT.accountId,
-      integration_id: MAP_ACCOUNT.integrationId,
-      // brand_id omitted intentionally
-      resource_type: resourceType,
-      filters,
-    },
-  });
-  // list_resources returns JSON in text block — parse it
+async function mapListResourcesPage(resourceType, filters = {}, nextToken = null) {
+  const args = {
+    account_id: MAP_ACCOUNT.accountId,
+    integration_id: MAP_ACCOUNT.integrationId,
+    resource_type: resourceType,
+    filters,
+  };
+  if (nextToken) args.next_token = nextToken;
+  const result = await mapCall('tools/call', { name: 'list_resources', arguments: args });
   if (Array.isArray(result.content)) {
     for (const block of result.content) {
       if (block.type === 'text' && block.text) {
-        try { return JSON.parse(block.text); } catch { return block.text; }
+        try { return JSON.parse(block.text); } catch { return { items: [], next_token: null }; }
       }
     }
   }
-  return result;
+  return { items: [], next_token: null };
+}
+
+async function mapListResources(resourceType, filters = {}) {
+  // Fetch all pages — MAP returns max 100 items per page
+  let allItems = [];
+  let nextToken = null;
+  let page = 0;
+  const MAX_PAGES = 20; // safety cap at 2000 items
+  do {
+    const result = await mapListResourcesPage(resourceType, filters, nextToken);
+    const items = result.items || result.data || [];
+    allItems = allItems.concat(Array.isArray(items) ? items : []);
+    nextToken = result.next_token || result.nextToken || null;
+    page++;
+    if (items.length === 0) break; // stop if empty page
+  } while (nextToken && page < MAX_PAGES);
+  return { items: allItems, total_count: allItems.length };
 }
 
 async function mapUpdateResources(resourceType, resources, note = '') {
@@ -206,11 +222,11 @@ async function mapCreateResources(resourceType, resources, note = '') {
 }
 
 async function askReportAnalyst(question, fast = true) {
-  // Returns raw MCP result — use extractData() to get rows
+  // Use account_id (UUID) for scoping — brand_ids may not work if brand has no report data
   return mapCall('tools/call', {
     name: 'ask_report_analyst',
     arguments: {
-      brand_ids: [MAP_ACCOUNT.brandId],
+      account_ids: [MAP_ACCOUNT.accountId],
       integration_ids: [MAP_ACCOUNT.integrationId],
       fast,
       question,
