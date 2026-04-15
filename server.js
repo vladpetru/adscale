@@ -112,7 +112,7 @@ async function mapCall(method, params = {}) {
       'Content-Type':  'application/json',
       'Accept':        'application/json, text/event-stream',
     },
-    timeout: 30000,
+    timeout: 90000,
   });
 
   const result = response.data?.result;
@@ -246,62 +246,64 @@ async function syncFromMAP() {
   // Budget rules (dayparting)
   await safeSync('sp_budget_rules','sp_budget_rules');
 
-  // Performance data via report analyst (requires paid MAP plan)
+  // Campaign performance via report analyst
   try {
-    const perfResult = await mapCall('tools/call', {
+    const campPerfRaw = await mapCall('tools/call', {
       name: 'ask_report_analyst',
       arguments: {
         brand_ids:       [MAP_ACCOUNT.brandId],
         integration_ids: [MAP_ACCOUNT.integrationId],
-        fast: false,
-        question: 'For ALL Sponsored Products campaigns, give me the last 30 days: campaignId, campaignName, spend, sales (attributedSales30d), ACOS, ROAS, impressions, clicks, orders (purchases30d). Return every campaign. Format as a JSON array with fields: campaignId, campaignName, spend, sales, acos, roas, impressions, clicks, orders.',
+        fast: true,
+        question: 'Last 30 days SP campaign performance. Return JSON array with fields: campaignId, campaignName, spend, sales14d, acos, roas, impressions, clicks, purchases14d. JSON only.',
       },
     });
-
-    let perfRows = [];
-    const raw = typeof perfResult === 'string' ? perfResult : JSON.stringify(perfResult);
-    const jsonMatch = raw.match(/\[[\s\S]*?\]/);
-    if (jsonMatch) { try { perfRows = JSON.parse(jsonMatch[0]); } catch {} }
-
+    const campPerfStr = typeof campPerfRaw === 'string' ? campPerfRaw : JSON.stringify(campPerfRaw);
+    let campPerfRows = [];
+    const campMatch = campPerfStr.match(/\[[\s\S]*?\]/);
+    if (campMatch) { try { campPerfRows = JSON.parse(campMatch[0]); } catch(e) { console.error('  Camp perf parse error:', e.message); } }
     const perfMap = {};
-    perfRows.forEach(row => {
+    campPerfRows.forEach(row => {
       if (row.campaignId) {
         perfMap[String(row.campaignId)] = {
-          spend:       parseFloat(row.spend)     || 0,
-          sales:       parseFloat(row.sales)     || 0,
-          acos:        parseFloat(row.acos)      || null,
-          roas:        parseFloat(row.roas)      || null,
-          impressions: parseInt(row.impressions) || 0,
-          clicks:      parseInt(row.clicks)      || 0,
-          orders:      parseInt(row.orders)      || 0,
+          spend:       parseFloat(row.spend)         || 0,
+          sales:       parseFloat(row.sales14d || row.sales) || 0,
+          acos:        parseFloat(row.acos)           || null,
+          roas:        parseFloat(row.roas)           || null,
+          impressions: parseInt(row.impressions)      || 0,
+          clicks:      parseInt(row.clicks)           || 0,
+          orders:      parseInt(row.purchases14d || row.orders) || 0,
         };
       }
     });
     await cacheSet('performance_map', perfMap);
     synced++;
     console.log('  Synced: performance_map (' + Object.keys(perfMap).length + ' campaigns)');
+  } catch (err) {
+    console.error('  Failed: campaign performance — ' + err.message);
+    errors.push({ key: 'performance_map', error: err.message });
+  }
 
-    // Keyword performance
-    const kwPerfResult = await mapCall('tools/call', {
+  // Keyword performance via report analyst
+  try {
+    const kwPerfRaw = await mapCall('tools/call', {
       name: 'ask_report_analyst',
       arguments: {
         brand_ids:       [MAP_ACCOUNT.brandId],
         integration_ids: [MAP_ACCOUNT.integrationId],
-        fast: false,
-        question: 'For ALL Sponsored Products keywords last 30 days: keywordId, keywordText, matchType, campaignId, campaignName, spend, sales, acos, roas, impressions, clicks, orders, bid. Format as a JSON array.',
+        fast: true,
+        question: 'Last 30 days SP keyword performance. Return JSON array with fields: keywordId, keywordText, matchType, campaignId, campaignName, spend, sales14d, acos, roas, impressions, clicks, purchases14d. JSON only.',
       },
     });
+    const kwPerfStr = typeof kwPerfRaw === 'string' ? kwPerfRaw : JSON.stringify(kwPerfRaw);
     let kwPerfRows = [];
-    const kwRaw = typeof kwPerfResult === 'string' ? kwPerfResult : JSON.stringify(kwPerfResult);
-    const kwMatch = kwRaw.match(/\[[\s\S]*?\]/);
-    if (kwMatch) { try { kwPerfRows = JSON.parse(kwMatch[0]); } catch {} }
+    const kwMatch = kwPerfStr.match(/\[[\s\S]*?\]/);
+    if (kwMatch) { try { kwPerfRows = JSON.parse(kwMatch[0]); } catch(e) { console.error('  KW perf parse error:', e.message); } }
     await cacheSet('kw_performance', kwPerfRows);
     synced++;
     console.log('  Synced: kw_performance (' + kwPerfRows.length + ' keywords)');
-
   } catch (err) {
-    console.error('  Failed: performance — ' + err.message);
-    errors.push({ key: 'performance', error: err.message });
+    console.error('  Failed: keyword performance — ' + err.message);
+    errors.push({ key: 'kw_performance', error: err.message });
   }
 
   // Merge all campaigns into one unified cache key for dashboard
