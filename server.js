@@ -2,8 +2,8 @@
 
 // ================================================================
 // AdScale — Amazon PPC Management Backend
-// Data source: MarketplaceAdPros MCP (MAP)
-// Architecture: MAP → PostgreSQL cache → Dashboard
+// Data source: MarketplaceAdPros (MAP)
+// Architecture: MAP list_resources → PostgreSQL cache → Dashboard
 // ================================================================
 
 require('dotenv').config();
@@ -32,7 +32,9 @@ if (missing.length > 0) {
 
 const MAP_TOKEN    = process.env.MAP_BEARER_TOKEN || '';
 const MAP_ENDPOINT = 'https://app.marketplaceadpros.com/mcp';
-const MAP_ACCOUNT  = {
+
+// Your UNIEVO US account IDs
+const MAP_ACCOUNT = {
   accountId:     process.env.MAP_ACCOUNT_ID     || '47e6da51-bf41-42ae-9da2-edbfbc38f771',
   integrationId: process.env.MAP_INTEGRATION_ID || '512ee096-b7f1-4515-896d-d165d526caa2',
   brandId:       process.env.MAP_BRAND_ID       || '4a6fa058-4ca9-438b-9a04-edad5aec8a87',
@@ -74,9 +76,11 @@ async function initDatabase() {
 // ----------------------------------------------------------------
 async function cacheSet(key, value) {
   if (!db) return;
-  await db.query(`INSERT INTO cache (key, value, updated_at) VALUES ($1, $2, NOW())
-    ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()`,
-    [key, JSON.stringify(value)]);
+  await db.query(
+    `INSERT INTO cache (key, value, updated_at) VALUES ($1, $2, NOW())
+     ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()`,
+    [key, JSON.stringify(value)]
+  );
 }
 
 async function cacheGet(key) {
@@ -93,14 +97,15 @@ async function cacheLastSync() {
 }
 
 // ----------------------------------------------------------------
-// MAP MCP caller
+// MAP MCP caller — JSON-RPC to MAP endpoint
 // ----------------------------------------------------------------
-async function mapCall(toolName, args = {}) {
+async function mapCall(method, params = {}) {
   if (!MAP_TOKEN) throw new Error('MAP_BEARER_TOKEN not configured.');
   const response = await axios.post(MAP_ENDPOINT, {
-    jsonrpc: '2.0', id: mcpCallId++,
-    method: 'tools/call',
-    params: { name: toolName, arguments: args },
+    jsonrpc: '2.0',
+    id: mcpCallId++,
+    method,
+    params,
   }, {
     headers: {
       'Authorization': `Bearer ${MAP_TOKEN}`,
@@ -111,7 +116,12 @@ async function mapCall(toolName, args = {}) {
   });
 
   const result = response.data?.result;
-  if (!result) throw new Error(`MAP returned no result for: ${toolName}`);
+  if (!result) {
+    const err = response.data?.error;
+    throw new Error(err?.message || `MAP returned no result for: ${method}`);
+  }
+
+  // Parse text content blocks
   if (Array.isArray(result.content)) {
     for (const block of result.content) {
       if (block.type === 'text' && block.text) {
@@ -122,70 +132,152 @@ async function mapCall(toolName, args = {}) {
   return result;
 }
 
-async function mapListTools() {
-  const response = await axios.post(MAP_ENDPOINT, {
-    jsonrpc: '2.0', id: mcpCallId++, method: 'tools/list', params: {},
-  }, {
-    headers: {
-      'Authorization': `Bearer ${MAP_TOKEN}`,
-      'Content-Type':  'application/json',
-      'Accept':        'application/json, text/event-stream',
+// ----------------------------------------------------------------
+// MAP list_resources — the correct way to fetch data from MAP
+// ----------------------------------------------------------------
+async function mapListResources(resourceType, filters = {}) {
+  return mapCall('tools/call', {
+    name: 'list_resources',
+    arguments: {
+      account_id:     MAP_ACCOUNT.accountId,
+      integration_id: MAP_ACCOUNT.integrationId,
+      brand_id:       MAP_ACCOUNT.brandId,
+      resource_type:  resourceType,
+      filters,
     },
-    timeout: 15000,
   });
-  return response.data?.result?.tools || [];
 }
 
 // ----------------------------------------------------------------
-// Sync function — fetches all data from MAP into PostgreSQL cache
+// MAP update_resources — push changes back to Amazon via MAP
+// ----------------------------------------------------------------
+async function mapUpdateResources(resourceType, resources, note = '') {
+  return mapCall('tools/call', {
+    name: 'update_resources',
+    arguments: {
+      account_id:     MAP_ACCOUNT.accountId,
+      integration_id: MAP_ACCOUNT.integrationId,
+      brand_id:       MAP_ACCOUNT.brandId,
+      note,
+      resources: resources.map(r => ({ type: resourceType, ...r })),
+    },
+  });
+}
+
+// ----------------------------------------------------------------
+// MAP create_resources
+// ----------------------------------------------------------------
+async function mapCreateResources(resourceType, resources, note = '') {
+  return mapCall('tools/call', {
+    name: 'create_resources',
+    arguments: {
+      account_id:     MAP_ACCOUNT.accountId,
+      integration_id: MAP_ACCOUNT.integrationId,
+      brand_id:       MAP_ACCOUNT.brandId,
+      note,
+      resources: resources.map(r => ({ type: resourceType, ...r })),
+    },
+  });
+}
+
+// ----------------------------------------------------------------
+// Normalize MAP response into a clean array
+// ----------------------------------------------------------------
+function normalizeMapResult(result) {
+  if (Array.isArray(result)) return result;
+  if (result && typeof result === 'object') {
+    // MAP often returns { items: [...] } or { campaigns: [...] } etc.
+    const keys = ['items', 'campaigns', 'keywords', 'adGroups', 'ad_groups',
+                  'portfolios', 'productAds', 'product_ads', 'targets', 'results', 'data'];
+    for (const k of keys) {
+      if (Array.isArray(result[k])) return result[k];
+    }
+    // Try any array-valued key
+    for (const k of Object.keys(result)) {
+      if (Array.isArray(result[k])) return result[k];
+    }
+    return [result];
+  }
+  return [];
+}
+
+// ----------------------------------------------------------------
+// Main sync function
 // ----------------------------------------------------------------
 async function syncFromMAP() {
   if (!MAP_TOKEN) throw new Error('MAP_BEARER_TOKEN not set.');
   const errors = [];
   let synced = 0;
 
-  async function safeSync(cacheKey, toolName, args = {}) {
+  async function safeSync(cacheKey, resourceType, filters = {}) {
     try {
-      const data = await mapCall(toolName, args);
-      await cacheSet(cacheKey, data);
+      const result = await mapListResources(resourceType, filters);
+      const items = normalizeMapResult(result);
+      await cacheSet(cacheKey, items);
       synced++;
-      console.log(`  Synced: ${cacheKey}`);
+      console.log(`  Synced: ${cacheKey} (${items.length} items) via ${resourceType}`);
     } catch (err) {
-      console.error(`  Failed: ${cacheKey} — ${err.message}`);
-      errors.push({ key: cacheKey, error: err.message });
+      console.error(`  Failed: ${cacheKey} (${resourceType}) — ${err.message}`);
+      errors.push({ key: cacheKey, resourceType, error: err.message });
     }
   }
 
   console.log('Starting MAP sync...');
 
-  // First discover available tools
-  let tools = [];
+  // Sponsored Products
+  await safeSync('sp_campaigns',   'sp_campaigns');
+  await safeSync('sp_portfolios',  'sp_portfolios');
+  await safeSync('sp_keywords',    'sp_keywords');
+  await safeSync('sp_ad_groups',   'sp_ad_groups');
+  await safeSync('sp_product_ads', 'sp_product_ads');
+  await safeSync('sp_neg_kws',     'sp_negative_keywords');
+  await safeSync('sp_camp_neg_kws','sp_campaign_negative_keywords');
+
+  // Sponsored Brands
+  await safeSync('sb_campaigns',   'sb_campaigns');
+  await safeSync('sb_keywords',    'sb_keywords');
+  await safeSync('sb_ad_groups',   'sb_ad_groups');
+
+  // Sponsored Display
+  await safeSync('sd_campaigns',   'sd_campaigns');
+  await safeSync('sd_ad_groups',   'sd_ad_groups');
+  await safeSync('sd_product_ads', 'sd_product_ads');
+
+  // Budget rules (dayparting)
+  await safeSync('sp_budget_rules','sp_budget_rules');
+
+  // Merge all campaigns into one unified cache key for dashboard
   try {
-    tools = await mapListTools();
-    await cacheSet('map_tools', tools);
-    console.log(`  Found ${tools.length} MAP tools`);
+    const sp = (await cacheGet('sp_campaigns'))?.data || [];
+    const sb = (await cacheGet('sb_campaigns'))?.data || [];
+    const sd = (await cacheGet('sd_campaigns'))?.data || [];
+    const allCamps = [
+      ...normalizeMapResult(sp).map(c => ({ ...c, _adType: 'SP' })),
+      ...normalizeMapResult(sb).map(c => ({ ...c, _adType: 'SB' })),
+      ...normalizeMapResult(sd).map(c => ({ ...c, _adType: 'SD' })),
+    ];
+    await cacheSet('campaigns', allCamps);
+
+    // Merge all keywords
+    const spKw = normalizeMapResult((await cacheGet('sp_keywords'))?.data || []);
+    const sbKw = normalizeMapResult((await cacheGet('sb_keywords'))?.data || []);
+    await cacheSet('keywords', [...spKw, ...sbKw]);
+
+    // Merge all product ads
+    const spAds = normalizeMapResult((await cacheGet('sp_product_ads'))?.data || []);
+    const sdAds = normalizeMapResult((await cacheGet('sd_product_ads'))?.data || []);
+    await cacheSet('product_ads', [...spAds, ...sdAds]);
+
+    // Portfolios
+    const ports = normalizeMapResult((await cacheGet('sp_portfolios'))?.data || []);
+    await cacheSet('portfolios', ports);
+
+    synced++;
+    console.log(`  Built merged caches: campaigns(${allCamps.length}), keywords(${spKw.length+sbKw.length})`);
   } catch (err) {
-    console.warn('  Could not list tools, using defaults:', err.message);
+    console.error('  Failed to build merged caches:', err.message);
+    errors.push({ key: 'merge', error: err.message });
   }
-
-  const toolNames = tools.map(t => t.name);
-  const findTool = (...keywords) => {
-    for (const kw of keywords) {
-      const found = toolNames.find(n => n.toLowerCase().includes(kw.toLowerCase()));
-      if (found) return found;
-    }
-    return keywords[keywords.length - 1]; // fallback to last keyword as default name
-  };
-
-  const acctArgs = { account_id: MAP_ACCOUNT.accountId, integration_id: MAP_ACCOUNT.integrationId, brand_id: MAP_ACCOUNT.brandId };
-
-  await safeSync('campaigns',    findTool('list_campaigns', 'campaigns'), acctArgs);
-  await safeSync('portfolios',   findTool('list_portfolios', 'portfolios'), acctArgs);
-  await safeSync('keywords',     findTool('list_keywords', 'keywords'), acctArgs);
-  await safeSync('ad_groups',    findTool('list_ad_groups', 'ad_groups'), acctArgs);
-  await safeSync('product_ads',  findTool('list_product_ads', 'product_ads'), acctArgs);
-  await safeSync('search_terms', findTool('search_term_report', 'search_terms'), acctArgs);
-  await safeSync('performance',  findTool('performance_report', 'get_report'), acctArgs);
 
   console.log(`Sync done. ${synced} ok, ${errors.length} failed.`);
   return { synced, errors, timestamp: new Date().toISOString() };
@@ -222,7 +314,10 @@ app.use(session({
   store: new SQLiteStore({ db: 'sessions.db', dir: '.' }),
   secret: process.env.SESSION_SECRET,
   resave: false, saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, maxAge: 24*60*60*1000, sameSite: 'lax' },
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true, maxAge: 24 * 60 * 60 * 1000, sameSite: 'lax',
+  },
   name: 'adscale.sid',
 }));
 app.use(ipAllowlist);
@@ -234,10 +329,9 @@ function requireAuth(req, res, next) {
 }
 
 // ================================================================
-// ROUTES
+// ROUTES — Auth
 // ================================================================
 
-// Auth
 app.post('/auth/login', loginLimiter, (req, res) => {
   const { password } = req.body;
   if (!password) return res.status(400).json({ error: 'Password required.' });
@@ -256,70 +350,91 @@ app.get('/auth/status', requireAuth, async (req, res) => {
   res.json({ loggedIn: true, mapConfigured: !!MAP_TOKEN, dbConnected: !!db, lastSync: lastSync || null });
 });
 
-// Sync — Refresh button
+// ================================================================
+// ROUTES — Sync
+// ================================================================
+
 app.post('/api/sync', requireAuth, apiLimiter, async (req, res) => {
   try {
     const result = await syncFromMAP();
     res.json({ success: true, ...result });
   } catch (err) {
     console.error('Sync error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// Data reads — all from cache
+// ================================================================
+// ROUTES — Data reads (from PostgreSQL cache)
+// ================================================================
+
 async function sendCached(res, key) {
   const cached = await cacheGet(key);
-  if (!cached) return res.json({ data: [], cached: false, message: 'No data yet. Click Refresh to sync.' });
-  return res.json({ data: cached.data, cached: true, updatedAt: cached.updatedAt });
+  if (!cached) {
+    return res.json({ data: [], cached: false, message: 'No data yet. Click Refresh to sync.' });
+  }
+  const data = normalizeMapResult(cached.data);
+  return res.json({ data, cached: true, updatedAt: cached.updatedAt });
 }
 
-app.get('/api/campaigns',    requireAuth, apiLimiter, async (req, res) => { try { await sendCached(res, 'campaigns');   } catch(e) { res.status(500).json({ error: e.message }); } });
-app.get('/api/keywords',     requireAuth, apiLimiter, async (req, res) => { try { await sendCached(res, 'keywords');    } catch(e) { res.status(500).json({ error: e.message }); } });
-app.get('/api/portfolios',   requireAuth, apiLimiter, async (req, res) => { try { await sendCached(res, 'portfolios');  } catch(e) { res.status(500).json({ error: e.message }); } });
-app.get('/api/ad-groups',    requireAuth, apiLimiter, async (req, res) => { try { await sendCached(res, 'ad_groups');   } catch(e) { res.status(500).json({ error: e.message }); } });
-app.get('/api/product-ads',  requireAuth, apiLimiter, async (req, res) => { try { await sendCached(res, 'product_ads'); } catch(e) { res.status(500).json({ error: e.message }); } });
-app.get('/api/search-terms', requireAuth, apiLimiter, async (req, res) => { try { await sendCached(res, 'search_terms');} catch(e) { res.status(500).json({ error: e.message }); } });
-app.get('/api/performance',  requireAuth, apiLimiter, async (req, res) => { try { await sendCached(res, 'performance'); } catch(e) { res.status(500).json({ error: e.message }); } });
+app.get('/api/campaigns',         requireAuth, apiLimiter, async (req, res) => { try { await sendCached(res, 'campaigns');    } catch(e) { res.status(500).json({ error: e.message }); } });
+app.get('/api/keywords',          requireAuth, apiLimiter, async (req, res) => { try { await sendCached(res, 'keywords');     } catch(e) { res.status(500).json({ error: e.message }); } });
+app.get('/api/portfolios',        requireAuth, apiLimiter, async (req, res) => { try { await sendCached(res, 'portfolios');   } catch(e) { res.status(500).json({ error: e.message }); } });
+app.get('/api/ad-groups',         requireAuth, apiLimiter, async (req, res) => { try { await sendCached(res, 'sp_ad_groups'); } catch(e) { res.status(500).json({ error: e.message }); } });
+app.get('/api/product-ads',       requireAuth, apiLimiter, async (req, res) => { try { await sendCached(res, 'product_ads');  } catch(e) { res.status(500).json({ error: e.message }); } });
+app.get('/api/search-terms',      requireAuth, apiLimiter, async (req, res) => { try { await sendCached(res, 'keywords');     } catch(e) { res.status(500).json({ error: e.message }); } });
+app.get('/api/negative-keywords', requireAuth, apiLimiter, async (req, res) => { try { await sendCached(res, 'sp_neg_kws');   } catch(e) { res.status(500).json({ error: e.message }); } });
+app.get('/api/budget-rules',      requireAuth, apiLimiter, async (req, res) => { try { await sendCached(res, 'sp_budget_rules'); } catch(e) { res.status(500).json({ error: e.message }); } });
 
-// Write actions
+// SP campaigns only (for campaign filter)
+app.get('/api/sp-campaigns', requireAuth, apiLimiter, async (req, res) => { try { await sendCached(res, 'sp_campaigns'); } catch(e) { res.status(500).json({ error: e.message }); } });
+
+// ================================================================
+// ROUTES — Write actions (push to Amazon via MAP)
+// ================================================================
+
+// Update campaign (pause/enable/budget)
 app.put('/api/campaigns/:id', requireAuth, async (req, res) => {
   try {
-    const tools = (await cacheGet('map_tools'))?.data || [];
-    const tool = tools.find(t => t.name?.includes('update') && t.name?.includes('campaign'))?.name || 'update_campaign';
-    const result = await mapCall(tool, { account_id: MAP_ACCOUNT.accountId, campaign_id: req.params.id, ...req.body });
+    const { _adType, ...fields } = req.body;
+    const type = _adType === 'SB' ? 'sb_campaigns' : _adType === 'SD' ? 'sd_campaigns' : 'sp_campaigns';
+    const result = await mapUpdateResources(type, [{ campaignId: req.params.id, ...fields }], 'AdScale dashboard update');
     res.json({ success: true, result });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Update keyword (bid, state)
 app.put('/api/keywords/:id', requireAuth, async (req, res) => {
   try {
-    const tools = (await cacheGet('map_tools'))?.data || [];
-    const tool = tools.find(t => t.name?.includes('update') && t.name?.includes('keyword'))?.name || 'update_keyword';
-    const result = await mapCall(tool, { account_id: MAP_ACCOUNT.accountId, keyword_id: req.params.id, ...req.body });
+    const { _adType, ...fields } = req.body;
+    const type = _adType === 'SB' ? 'sb_keywords' : 'sp_keywords';
+    const result = await mapUpdateResources(type, [{ keywordId: req.params.id, ...fields }], 'AdScale bid/state update');
     res.json({ success: true, result });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/campaigns', requireAuth, async (req, res) => {
-  try {
-    const tools = (await cacheGet('map_tools'))?.data || [];
-    const tool = tools.find(t => t.name?.includes('create') && t.name?.includes('campaign'))?.name || 'create_campaign';
-    const result = await mapCall(tool, { account_id: MAP_ACCOUNT.accountId, ...req.body });
-    res.json({ success: true, result });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
+// Add negative keyword
 app.post('/api/keywords/negative', requireAuth, async (req, res) => {
   try {
-    const tools = (await cacheGet('map_tools'))?.data || [];
-    const tool = tools.find(t => t.name?.includes('negative'))?.name || 'add_negative_keyword';
-    const result = await mapCall(tool, { account_id: MAP_ACCOUNT.accountId, ...req.body });
+    const result = await mapCreateResources('sp_negative_keywords', [req.body], 'AdScale negative keyword');
     res.json({ success: true, result });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Algorithm settings (PostgreSQL only)
+// Create campaign
+app.post('/api/campaigns', requireAuth, async (req, res) => {
+  try {
+    const { _adType, ...fields } = req.body;
+    const type = _adType === 'SB' ? 'sb_campaigns' : _adType === 'SD' ? 'sd_campaigns' : 'sp_campaigns';
+    const result = await mapCreateResources(type, [fields], 'AdScale new campaign');
+    res.json({ success: true, result });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ================================================================
+// ROUTES — Algorithm settings (PostgreSQL only)
+// ================================================================
+
 app.get('/api/settings', requireAuth, async (req, res) => {
   if (!db) return res.json({});
   try {
@@ -335,8 +450,11 @@ app.post('/api/settings', requireAuth, async (req, res) => {
   if (!key) return res.status(400).json({ error: 'key required.' });
   if (!db) return res.json({ success: true, persisted: false });
   try {
-    await db.query(`INSERT INTO settings (key, value, updated_at) VALUES ($1, $2, NOW())
-      ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()`, [key, JSON.stringify(value)]);
+    await db.query(
+      `INSERT INTO settings (key, value, updated_at) VALUES ($1, $2, NOW())
+       ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()`,
+      [key, JSON.stringify(value)]
+    );
     res.json({ success: true, persisted: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -353,31 +471,36 @@ app.post('/api/algorithms/:id', requireAuth, async (req, res) => {
   const { enabled, config } = req.body;
   if (!db) return res.json({ success: true, persisted: false });
   try {
-    await db.query(`INSERT INTO algorithm_configs (algorithm_id, enabled, config, updated_at) VALUES ($1, $2, $3, NOW())
-      ON CONFLICT (algorithm_id) DO UPDATE SET enabled = $2, config = $3, updated_at = NOW()`,
-      [req.params.id, enabled, JSON.stringify(config || {})]);
+    await db.query(
+      `INSERT INTO algorithm_configs (algorithm_id, enabled, config, updated_at) VALUES ($1, $2, $3, NOW())
+       ON CONFLICT (algorithm_id) DO UPDATE SET enabled = $2, config = $3, updated_at = NOW()`,
+      [req.params.id, enabled, JSON.stringify(config || {})]
+    );
     res.json({ success: true, persisted: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Health + debug
+// ================================================================
+// ROUTES — Health + debug
+// ================================================================
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', mapConfigured: !!MAP_TOKEN, dbConnected: !!db, timestamp: new Date().toISOString() });
 });
 
-app.get('/api/debug/tools', requireAuth, async (req, res) => {
+// Debug: list available MAP resource types
+app.get('/api/debug/resource-types', requireAuth, async (req, res) => {
   try {
-    const tools = await mapListTools();
-    res.json({ count: tools.length, tools: tools.map(t => ({ name: t.name, description: t.description })) });
+    const result = await mapCall('tools/call', { name: 'list_resource_types', arguments: {} });
+    res.json(result);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/debug/call', requireAuth, async (req, res) => {
-  const { tool, args } = req.body;
-  if (!tool) return res.status(400).json({ error: 'tool name required.' });
+// Debug: test a specific resource type list
+app.get('/api/debug/list/:type', requireAuth, async (req, res) => {
   try {
-    const result = await mapCall(tool, args || {});
-    res.json({ tool, result });
+    const result = await mapListResources(req.params.type);
+    res.json({ type: req.params.type, count: normalizeMapResult(result).length, sample: normalizeMapResult(result).slice(0,2), raw: result });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -401,7 +524,7 @@ initDatabase().then(() => {
     console.log(`  IP allowlist:       ${process.env.ALLOWED_IPS ? 'enabled' : 'disabled'}`);
     console.log('');
     console.log('  Log in and click Refresh to sync from MAP.');
-    console.log('  Debug: /api/debug/tools');
+    console.log('  Debug: /api/debug/resource-types');
     console.log('');
   });
 });
