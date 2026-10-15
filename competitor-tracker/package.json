@@ -1,0 +1,18 @@
+{
+  "name": "competitor-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Daily Amazon competitor change tracker (price, listing, images, A+ content, variations)",
+  "type": "module",
+  "scripts": {
+    "track": "node src/index.js",
+    "build-site": "node src/build-site.js",
+    "test": "node --test test/tracker.test.js"
+  },
+  "dependencies": {
+    "cheerio": "1.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
