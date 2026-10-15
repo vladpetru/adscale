@@ -64,7 +64,7 @@ test('full run: baseline, then detects every kind of change', async () => {
     SPAPI_ENDPOINT: base, SPAPI_TOKEN_URL: base + '/auth', AMAZON_PAGE_BASE: base,
     SPAPI_CLIENT_ID: 'id', SPAPI_CLIENT_SECRET: 'secret', SPAPI_REFRESH_TOKEN: 'refresh',
   };
-  const track = () => run(process.execPath, [path.join(ROOT, 'src/index.js')], { env });
+  const track = () => run(process.execPath, [path.join(ROOT, 'src/tracker.js')], { env });
   const changes = () => JSON.parse(fs.readFileSync(path.join(dir, 'data/changes.json'), 'utf8'));
 
   try {

@@ -1,1 +1,4 @@
 node_modules/
+# Made by the tracker. On Railway these live on the volume, not in GitHub.
+data/
+site/

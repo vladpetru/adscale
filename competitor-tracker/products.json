@@ -2,6 +2,8 @@
   "settings": {
     "marketplace": "US",
     "checkEveryDays": 1,
+    "checkAtHour": 9,
+    "timeZone": "America/New_York",
     "trackVariations": true,
     "maxChildrenPerParent": 40,
     "checkAplusContent": true,

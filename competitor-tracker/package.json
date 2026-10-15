@@ -5,9 +5,10 @@
   "description": "Daily Amazon competitor change tracker (price, listing, images, A+ content, variations)",
   "type": "module",
   "scripts": {
-    "track": "node src/index.js",
+    "start": "node src/server.js",
+    "track": "node src/tracker.js",
     "build-site": "node src/build-site.js",
-    "test": "node --test test/tracker.test.js"
+    "test": "node --test test/tracker.test.js test/server.test.js"
   },
   "dependencies": {
     "cheerio": "1.0.0"

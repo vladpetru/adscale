@@ -1,9 +1,0 @@
-# Settings for hosting the tracker website on Netlify (free). See README, step 5.
-[build]
-  publish = "site"
-  command = "echo 'Nothing to build, the site is made by the daily GitHub run.'"
-
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Robots-Tag = "noindex, nofollow"

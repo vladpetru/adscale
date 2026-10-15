@@ -1,5 +1,6 @@
-// Main run: fetch every tracked product, compare with the last snapshot, log changes, rebuild the website.
-// Run with:  npm run track        (set FORCE_RUN=1 to ignore the "checkEveryDays" setting)
+// One tracker run: fetch every tracked product, compare with the last snapshot, log changes.
+// The Railway server (server.js) calls runTracker() on a schedule. It can also be run by hand:
+//   npm run track        (set FORCE_RUN=1 to ignore the "checkEveryDays" setting)
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -11,24 +12,25 @@ import { diffFamily } from './diff.js';
 import { buildSite } from './build-site.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-// The TRACKER_* overrides are only used by the automated tests.
-const DATA = process.env.TRACKER_DATA_DIR || path.join(ROOT, 'data');
-const PRODUCTS_FILE = process.env.TRACKER_PRODUCTS_FILE || path.join(ROOT, 'products.json');
+// On Railway, data is saved on the attached volume so it survives restarts and redeploys.
+// The TRACKER_* overrides are used by the automated tests.
+export const DATA = process.env.TRACKER_DATA_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(ROOT, 'data');
+export const PRODUCTS_FILE = process.env.TRACKER_PRODUCTS_FILE || path.join(ROOT, 'products.json');
 const SITE_DIR = process.env.TRACKER_SITE_DIR || path.join(ROOT, 'site');
 const MAX_CHANGES_KEPT = 20000;
 const MAX_HISTORY_DAYS = 400;
 
-const readJson = (file, fallback) => {
+export const readJson = (file, fallback) => {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
 };
-const writeJson = (file, value) => {
+export const writeJson = (file, value) => {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, JSON.stringify(value, null, 1) + '\n');
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const isAsin = (s) => /^[A-Z0-9]{10}$/.test(s) && s !== 'B000000000';
 
-async function main() {
+export async function runTracker({ force = false } = {}) {
   const config = readJson(PRODUCTS_FILE, null);
   if (!config) throw new Error('products.json is missing or is not valid JSON (check for a missing comma or quote).');
   const settings = config.settings || {};
@@ -39,13 +41,12 @@ async function main() {
 
   const everyDays = Number(settings.checkEveryDays) || 1;
   const sinceLast = status.lastSuccessAt ? (Date.now() - Date.parse(status.lastSuccessAt)) / 86400000 : Infinity;
-  if (!process.env.FORCE_RUN && sinceLast < everyDays - 0.1) {
+  if (!force && sinceLast < everyDays - 0.1) {
     console.log(`Last check was ${sinceLast.toFixed(1)} days ago; checkEveryDays is ${everyDays}. Skipping this run.`);
     return;
   }
   if (!watch.length) {
     console.log('No products to track yet. Add competitor ASINs to products.json.');
-    buildSite(DATA, config, SITE_DIR);
     return;
   }
 
@@ -146,7 +147,6 @@ async function main() {
     newChanges,
     errors,
   });
-  buildSite(DATA, config, SITE_DIR);
   console.log(`Done. ${newChanges} new change(s). ${errors.length} warning(s).`);
   errors.forEach((e) => console.log('  ! ' + e));
 }
@@ -164,7 +164,12 @@ function appendHistory(parentAsin, now, items) {
   writeJson(file, kept.slice(-MAX_HISTORY_DAYS));
 }
 
-main().catch((err) => {
-  console.error('Tracker failed: ' + err.message);
-  process.exit(1);
-});
+// Run by hand from the command line: also rebuilds site/index.html.
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  runTracker({ force: Boolean(process.env.FORCE_RUN) })
+    .then(() => buildSite(DATA, readJson(PRODUCTS_FILE, {}), SITE_DIR))
+    .catch((err) => {
+      console.error('Tracker failed: ' + err.message);
+      process.exit(1);
+    });
+}

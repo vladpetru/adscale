@@ -12,7 +12,7 @@ Checks your Amazon competitors once a day (or every few days) and records every 
 | Any other listing detail (material, dimensions, weight, etc.) | Amazon SP-API (free) |
 | A+ content (text and images) | Public product page (free, see note below) |
 
-Everything runs for free on GitHub. Results appear on a small website (Step 5) and are also saved in this folder.
+It runs as its own small app on Railway, next to your AdScale dashboard. The Amazon data is free; the Railway app adds a small amount to your monthly Railway usage (see Common questions).
 
 **About A+ content:** Amazon only lets you read A+ content for your own brand through the API, so the tracker reads the competitor's public product page instead. Amazon sometimes shows a "robot check" page to automated visitors. When that happens, the tracker skips A+ for that day and tries again on the next run. It never reports a fake change because of it.
 
@@ -20,11 +20,12 @@ Everything runs for free on GitHub. Results appear on a small website (Step 5) a
 
 ## How it works
 
-1. Every day at 9:17 AM New York time, GitHub starts the tracker (file: `.github/workflows/competitor-tracker.yml`).
-2. The tracker reads your watch list in `products.json`.
+1. A small app on Railway shows the tracker website, behind a password.
+2. Every day after 9 AM New York time (you can change this), the app checks every competitor in `products.json`.
 3. For each competitor, it finds the parent product and all its variations, then downloads their current details and prices.
-4. It compares today's details with the last saved copy and writes every difference to `data/changes.json`.
-5. It rebuilds the website in `site/index.html` and saves everything back to GitHub.
+4. It compares today's details with the last saved copy and records every difference.
+5. Everything is saved on a Railway volume (a small permanent disk), so the history survives restarts and updates.
+6. The **Check now** button on the website starts a check right away.
 
 ---
 
@@ -51,19 +52,7 @@ Everything runs for free on GitHub. Results appear on a small website (Step 5) a
 
 Keep these 3 values private, like a password.
 
-### Step 3. Save the keys in GitHub
-
-1. Open this repository on github.com.
-2. Go to **Settings**, then **Secrets and variables**, then **Actions**.
-3. Click **New repository secret** three times and add:
-
-| Name | Value |
-|---|---|
-| `SPAPI_CLIENT_ID` | the Client identifier |
-| `SPAPI_CLIENT_SECRET` | the Client secret |
-| `SPAPI_REFRESH_TOKEN` | the Refresh Token |
-
-### Step 4. Add your competitors
+### Step 3. Add your competitors
 
 Edit `competitor-tracker/products.json` on github.com (click the file, then the pencil icon). Replace the example line with your competitors:
 
@@ -77,49 +66,68 @@ Edit `competitor-tracker/products.json` on github.com (click the file, then the 
 - You can use the parent ASIN or the ASIN of any one variation. The tracker finds the parent and follows all variations.
 - Every line except the last needs a comma at the end.
 - The nickname is just for you.
+- Saving the file on GitHub makes Railway restart the tracker with the new list (takes about a minute). The history is kept.
 
 Settings at the top of the same file:
 
 | Setting | What it does |
 |---|---|
 | `checkEveryDays` | `1` = every day, `3` = every 3 days, and so on |
+| `checkAtHour` | Hour of the day to check, 0 to 23. `9` = 9 AM |
+| `timeZone` | Time zone for `checkAtHour`, such as `America/New_York` or `America/Chicago` |
 | `trackVariations` | `true` = follow every variation's price and listing. `false` = only the ASIN you listed |
 | `maxChildrenPerParent` | Upper limit of variations per product, to keep runs fast |
 | `checkAplusContent` | `false` turns off the A+ page check |
 | `rankChangeAlertPercent` | Only log rank moves bigger than this percent (rank moves a little every day) |
 | `marketplace` | `US` (also supports `CA`, `MX`, `UK`, `DE`) |
 
-### Step 5. Put the website online (free, on Netlify)
+### Step 4. Create the Railway app
 
-1. Go to [netlify.com](https://www.netlify.com) and sign up with your GitHub account.
-2. Click **Add new site**, then **Import an existing project**, then **GitHub**, and pick the `adscale` repository.
-3. Set **Branch to deploy** to `main` and **Base directory** to `competitor-tracker`. Leave everything else as is. Click **Deploy**.
-4. Netlify gives you an address like `random-name-123.netlify.app`. You can rename it under **Site configuration**.
+This uses the same Railway account and GitHub repository as your AdScale dashboard, but it is a separate app, so the dashboard is not affected.
 
-The website updates on its own every time the tracker runs. Note: anyone who has the address can open it (search engines are told not to list it). It only shows public Amazon information.
+1. Open your Railway project (the one with AdScale) and click **Create** (or **+ New**), then **GitHub Repo**, and pick `adscale` again.
+2. Click the new service, open **Settings**, and set:
+   - **Root Directory**: `/competitor-tracker`
+   - **Watch Paths**: `/competitor-tracker/**` (so it only restarts when tracker files change)
+   - **Branch**: `main`
+3. Still in Settings, under **Networking**, click **Generate Domain**. This is your tracker website address.
+4. Add a volume (the permanent disk): right-click the service, or use **Create**, choose **Volume**, attach it to this service, and set the mount path to `/data`. Without a volume, the history is erased every time the app restarts.
+5. Open the **Variables** tab and add these 4 variables:
 
-### Step 6. Run it the first time
+| Name | Value |
+|---|---|
+| `SPAPI_CLIENT_ID` | the Client identifier from Step 2 |
+| `SPAPI_CLIENT_SECRET` | the Client secret from Step 2 |
+| `SPAPI_REFRESH_TOKEN` | the Refresh Token from Step 2 |
+| `SITE_PASSWORD` | a password you choose for the website |
 
-1. On github.com, open the **Actions** tab.
-2. Click **Competitor tracker** on the left, then **Run workflow**, then the green **Run workflow** button.
-3. Wait a few minutes. A green check means it worked.
+6. Railway deploys the app. When it shows **Active**, open the website address. Your browser asks for a username and password: type anything as the username, and your `SITE_PASSWORD` as the password.
 
-The first run saves a starting copy of each product. Changes appear from the second run on.
+Optional: in your AdScale dashboard service, set **Watch Paths** to `!/competitor-tracker/**` so that editing the watch list does not restart the dashboard.
+
+### Step 5. First check
+
+The first check starts by itself within a minute after the app starts. You can also click **Check now** on the website. With many variations, a check takes several minutes; refresh the page to see progress.
+
+The first check saves a starting copy of each product. Changes appear from the second check on.
 
 ---
 
 ## Common questions
 
-**I got an email that the run failed.** Open the **Actions** tab, click the failed run, then **Check competitors**. The last lines explain the problem. The most common ones:
-- `Amazon login failed`: one of the 3 secrets is wrong or has extra spaces. Copy them again.
+**The website shows a warning, or nothing changes.** Warnings from the last check show at the top of the website. For more detail, open the tracker service on Railway and click **Deployments**, then **View logs**. The most common problems:
+- `Amazon login failed`: one of the 3 SPAPI variables is wrong or has extra spaces. Copy them again.
 - `Unauthorized` or `Access denied`: the app is missing the **Product Listing** or **Pricing** role. Add it, then authorize again for a new Refresh Token.
 - `products.json is not valid JSON`: a comma or quote is missing in your watch list.
+- `No Railway volume attached` in the logs: do Step 4, item 4.
 
-**How many products can I track?** 50 parents with up to 40 variations each takes roughly 15 minutes per run, well inside GitHub's free allowance. Prices are the slow part, because Amazon allows about 20 price lookups every 10 seconds.
+**How much does it cost?** The Amazon data is free. The app is very small and sits idle between checks, so it should add only around $1 a month or less to your Railway usage. Your plan includes $5 of usage a month, shared with AdScale. You can see the exact amount under **Usage** in Railway.
 
-**Can I see the raw data?** Yes. `data/changes.json` has every change, `data/snapshots/` has the latest copy of each product, and `data/history/` keeps daily prices and ranks for future charts.
+**How many products can I track?** 50 parents with up to 40 variations each takes roughly 15 minutes per check. Prices are the slow part, because Amazon allows about 20 price lookups every 10 seconds.
 
-**Does this touch my AdScale dashboard?** No. It lives only in this folder and its own GitHub workflow.
+**Can I download the raw data?** Open `your-tracker-address/changes.json` for every change ever recorded.
+
+**Does this touch my AdScale dashboard?** No. It is a separate Railway service that only uses the `competitor-tracker` folder.
 
 ---
 
@@ -127,7 +135,7 @@ The first run saves a starting copy of each product. Changes appear from the sec
 
 ```
 npm install
-npm test                      # runs the tracker twice against a fake Amazon server
-FORCE_RUN=1 npm run track     # real run (needs the 3 SPAPI_ variables)
-npm run build-site            # rebuild site/index.html from data/
+npm test                      # runs the tracker and server against a fake Amazon server
+npm start                     # website + daily schedule (what Railway runs)
+FORCE_RUN=1 npm run track     # one check from the command line, also writes site/index.html
 ```

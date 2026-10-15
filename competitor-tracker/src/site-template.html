@@ -57,6 +57,10 @@ a { color: var(--accent); }
 header { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: end; justify-content: space-between; }
 .status { display: flex; flex-wrap: wrap; gap: 8px 20px; color: var(--muted); font-size: 0.85rem; }
 .status b { color: var(--ink); font-weight: 600; }
+.actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.run { font: inherit; font-weight: 600; background: var(--ink); color: var(--bg); border: 0; border-radius: 8px; padding: 8px 16px; cursor: pointer; }
+.run:disabled { opacity: 0.5; cursor: default; }
+.run-note { color: var(--muted); font-size: 0.85rem; }
 .pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 500; }
 .pill.ok { background: var(--down-soft); color: var(--down); }
 .pill.warn { background: var(--warn-soft); color: var(--warn); }
@@ -126,6 +130,10 @@ input[type="search"] { flex: 1 1 180px; min-width: 0; }
     <div>
       <h1>Competitor Watch</h1>
       <div class="status" id="status"></div>
+    </div>
+    <div class="actions" id="actions" hidden>
+      <button class="run" id="run">Check now</button>
+      <span class="run-note" id="runNote"></span>
     </div>
   </header>
   <div id="notice" hidden></div>
@@ -287,6 +295,25 @@ function render() { renderProducts(); renderTypes(); renderFeed(); }
 
 $('range').addEventListener('change', (e) => { state.range = Number(e.target.value); state.limit = 150; render(); });
 $('q').addEventListener('input', (e) => { state.q = e.target.value; state.limit = 150; renderTypes(); renderFeed(); });
+function setupRun() {
+  if (!DATA.canRun) return;
+  $('actions').hidden = false;
+  const busy = () => { $('run').disabled = true; $('runNote').textContent = 'Checking now. This takes a few minutes; refresh the page to see results.'; };
+  if (DATA.running) busy();
+  $('run').addEventListener('click', async () => {
+    busy();
+    try {
+      const res = await fetch('run', { method: 'POST' });
+      if (res.status === 409) $('runNote').textContent = 'A check is already running. Refresh in a few minutes.';
+      else if (!res.ok) throw new Error();
+    } catch {
+      $('run').disabled = false;
+      $('runNote').textContent = 'Could not start the check. Try again in a moment.';
+    }
+  });
+}
+
 renderStatus();
+setupRun();
 render();
 </script>
