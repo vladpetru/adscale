@@ -1,0 +1,4 @@
+node_modules/
+# Saved data (users, tool data). On Railway this lives on the volume.
+data/
+.env

@@ -1,106 +1,119 @@
-# AdScale — Amazon PPC Management Dashboard
+# OUTTANS HQ
 
-Private self-hosted PPC management tool for Amazon Ads.
+The OUTTANS team's internal tools, in one place. Each tool is a tab at the top of the screen. Everyone logs in with their own email and password.
+
+| Tool | What it does |
+|---|---|
+| **Competitor Watch** | Tracks Amazon competitors every day: price, title, bullets, images, A+ content, variations and more. [Guide](tools/competitor-tracker/README.md) |
 
 ---
 
-## Files in this folder
+## Setting it up on Railway
+
+OUTTANS HQ replaces AdScale. It runs on the same Railway service AdScale used, so there is no new app to create.
+
+### Step 1. Publish the code
+
+Merge the pull request into `main` on GitHub. Railway notices and starts building OUTTANS HQ automatically.
+
+### Step 2. Add a volume (permanent storage)
+
+OUTTANS HQ saves accounts and tool data on a Railway volume, so nothing is lost when the app restarts.
+
+1. Open your Railway project.
+2. Right-click an empty spot on the canvas (or click **Create**), choose **Volume**, and attach it to the service that used to run AdScale.
+3. Set the mount path to `/data`.
+
+### Step 3. Set the variables
+
+Open the service, then the **Variables** tab.
+
+**Add these:**
+
+| Name | Value |
+|---|---|
+| `ADMIN_EMAIL` | your email, for the first admin account |
+| `ADMIN_PASSWORD` | a password of at least 10 characters for that account |
+| `ADMIN_NAME` | your name, as shown in the app |
+
+The admin account is created the first time OUTTANS HQ starts. After that, these three are not used again. You can change your password inside the app any time.
+
+**Delete these old AdScale ones** (if you see them): `APP_PASSWORD`, `ALLOWED_IPS`, `MAP_BEARER_TOKEN`, `MAP_ACCOUNT_ID`, `MAP_INTEGRATION_ID`, `MAP_BRAND_ID`, `AMAZON_CLIENT_ID`, `AMAZON_CLIENT_SECRET`, `AMAZON_REGION`, `AMAZON_REDIRECT_URI`, `DATABASE_URL`.
+
+If you have a `SESSION_SECRET`, keep it. If not, OUTTANS HQ makes its own.
+
+If your project has a PostgreSQL database that AdScale used, OUTTANS HQ does not need it. You can delete it to save usage, but only once you are sure you no longer want AdScale's old data.
+
+### Step 4. Rename things (optional, but tidy)
+
+- **Railway service:** open **Settings** and rename it to `outtans-hq`. Under **Networking**, you can change the web address to something like `outtans-hq.up.railway.app`.
+- **GitHub repository:** on github.com, open the repository, then **Settings**. Change the name from `adscale` to `outtans-hq` and click **Rename**. Afterward, check that Railway's service **Settings** still shows the repository. If it does not, connect it again.
+- **Old tracker service:** if you created a separate Railway service for the competitor tracker earlier, delete it. Competitor Watch now lives inside OUTTANS HQ.
+
+### Step 5. Log in
+
+Open the web address, log in with `ADMIN_EMAIL` and `ADMIN_PASSWORD`, and you are in.
+
+Each tool may need its own setup. For Competitor Watch, see its [guide](tools/competitor-tracker/README.md).
+
+---
+
+## Your team
+
+Only admins can manage the team. Click your initials in the top right, then **Team**.
+
+- **Add a person:** enter their name and email, and pick **Member** (uses the tools) or **Admin** (can also manage the team). You get a temporary password to send them. The first time they log in, they choose their own password.
+- **Forgot password:** click **Reset password** next to the person. They get a new temporary password, and any open sessions they have are logged out.
+- **Remove someone:** click **Remove**. They are logged out right away and cannot log in again.
+
+Everyone can change their own password under **Your account**.
+
+**Security built in:** passwords are stored only as secure hashes, 5 wrong passwords lock the login for 15 minutes, sessions last 14 days, and changing a password logs out other devices.
+
+---
+
+## Costs
+
+OUTTANS HQ is one small app on your Railway plan, the same as AdScale was. Tools add little on top, because they sit idle most of the day. You can see exact numbers under **Usage** in Railway.
+
+---
+
+## For developers
 
 ```
-adscale/
-├── server.js          ← Backend server (do not edit unless instructed)
-├── package.json       ← Dependencies list (do not edit)
-├── .env.example       ← Secret variables template
-├── .gitignore         ← Keeps secrets off GitHub (do not edit)
-├── README.md          ← This file
-└── public/
-    └── index.html     ← Your dashboard UI
+npm install
+npm test      # platform and tool tests, using a fake Amazon server
+npm start     # runs on http://localhost:8080 (set ADMIN_EMAIL and ADMIN_PASSWORD the first time)
 ```
 
----
+**Layout**
 
-## Deployment Steps
+| Path | What it is |
+|---|---|
+| `server.js` | Starts the app |
+| `platform/` | Logins, team management, the page frame and tabs |
+| `public/hq.css` | Shared look: colors, fonts, buttons, forms, tables (light and dark) |
+| `tools/index.js` | The list of tools; each one becomes a tab, in this order |
+| `tools/<tool>/` | One folder per tool |
+| `test/` | Automated tests |
 
-### Step 1 — Install Node.js (Windows)
-1. Go to https://nodejs.org
-2. Click the LTS button and download the installer
-3. Run it — all defaults, just click Next → Install
-4. Open Command Prompt and verify:
+Data is saved in `DATA_DIR`, or the Railway volume, or `./data` locally. Each tool gets its own folder at `<data>/tools/<tool id>/`.
+
+**Adding a tool**
+
+1. Create `tools/<tool-id>/index.js` that exports `{ id, name, setup }`:
+
+   ```js
+   export default {
+     id: 'my-tool',        // the tab's address: /my-tool
+     name: 'My Tool',      // the tab's label
+     setup({ router, dataDir, basePath, render, log }) {
+       router.get('/', (req, res) => res.send(render(req, { title: 'My Tool', body: '<h1>My Tool</h1>' })));
+       return { start() { /* optional: schedules */ } };
+     },
+   };
    ```
-   node --version
-   npm --version
-   ```
 
-### Step 2 — GitHub (upload your code)
-1. Go to https://github.com → sign up (free)
-2. Create a new repository called `adscale` — set to PRIVATE
-3. Upload all these files by dragging them into the GitHub repository page
-4. Click "Commit changes"
+2. Add it to the list in `tools/index.js`.
 
-### Step 3 — Railway (deploy to cloud)
-1. Go to https://railway.app
-2. Click "Login with GitHub"
-3. Click "New Project" → "Deploy from GitHub repo"
-4. Select your `adscale` repository
-5. Railway will start deploying automatically
-
-### Step 4 — Set environment variables on Railway
-In your Railway project, go to Variables tab and add:
-
-| Variable               | Value                                      |
-|------------------------|--------------------------------------------|
-| AMAZON_CLIENT_ID       | Your Client ID from Amazon developer console |
-| AMAZON_CLIENT_SECRET   | Your Client Secret from Amazon             |
-| AMAZON_REGION          | EU  (or NA for North America)              |
-| AMAZON_REDIRECT_URI    | https://YOUR-APP.railway.app/auth/callback |
-| APP_PASSWORD           | Your chosen strong password                |
-| SESSION_SECRET         | A random 32+ character string              |
-| ALLOWED_IPS            | Your home IP, work IP (comma separated) or leave blank |
-| NODE_ENV               | production                                 |
-
-### Step 5 — Get your Railway URL
-1. In Railway → Settings → Domains → Generate Domain
-2. Copy your URL (looks like https://adscale-xxxx.railway.app)
-
-### Step 6 — Update Amazon redirect URI
-1. Go to https://developer.amazon.com/loginwithamazon/console/site/lwa/overview.html
-2. Click your AdScale security profile → Web Settings → Edit
-3. Add your Railway URL to Allowed Return URLs:
-   https://adscale-xxxx.railway.app/auth/callback
-4. Save
-
-### Step 7 — Open your app
-1. Go to your Railway URL in any browser
-2. Enter your APP_PASSWORD
-3. Click "Connect Amazon" → Authorize
-4. Your real data loads
-
----
-
-## Accessing from multiple devices
-Just open your Railway URL in any browser on any device.
-No installation needed on home PC, work PC, or phone.
-
----
-
-## Security features included
-- Password login (brute force protection — blocks after 5 failed attempts)
-- Sessions expire after 24 hours
-- HTTPS automatic on Railway
-- All secrets in environment variables — never in code
-- IP allowlist (optional — set ALLOWED_IPS)
-- Secure HTTP headers (Helmet)
-
----
-
-## When Amazon API is approved
-Once you receive your Client ID and Client Secret from Amazon:
-1. Go to Railway → Variables
-2. Update AMAZON_CLIENT_ID and AMAZON_CLIENT_SECRET
-3. Railway restarts automatically
-4. Click "Connect Amazon" in the app
-
----
-
-## Support
-Built with Claude — continue the conversation to add features.
+`router` is an Express router (only logged-in people reach it, and `req.user` is the person). `render` wraps your page in the OUTTANS HQ frame. Use the classes in `public/hq.css` (`panel`, `btn`, `form`, `table`, `pill`, `notice`) so every tool looks the same.

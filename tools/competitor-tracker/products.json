@@ -1,0 +1,15 @@
+{
+  "settings": {
+    "marketplace": "US",
+    "checkEveryDays": 1,
+    "checkAtHour": 9,
+    "timeZone": "America/New_York",
+    "trackVariations": true,
+    "maxChildrenPerParent": 40,
+    "checkAplusContent": true,
+    "rankChangeAlertPercent": 25
+  },
+  "products": [
+    { "asin": "B000000000", "nickname": "Example competitor (replace me)" }
+  ]
+}
