@@ -1,19 +1,13 @@
-// Builds site/index.html (the tracker website) from the saved data.
-// Run on its own with:  npm run build-site
+// Gathers what the Competitor Watch tab shows: the tracked products and the change log.
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readJson } from '../../platform/storage.js';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SITES = { US: 'www.amazon.com', CA: 'www.amazon.ca', MX: 'www.amazon.com.mx', UK: 'www.amazon.co.uk', DE: 'www.amazon.de' };
-const MAX_CHANGES_ON_SITE = 5000;
+const MAX_CHANGES_ON_PAGE = 5000;
 
-const readJson = (file, fallback) => {
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
-};
-
-export function siteData(dataDir, config) {
+export function pageData(dataDir, config) {
   const settings = config?.settings || {};
   const changes = readJson(path.join(dataDir, 'changes.json'), []);
   const snapDir = path.join(dataDir, 'snapshots');
@@ -28,7 +22,7 @@ export function siteData(dataDir, config) {
   const products = snaps.map((s) => {
     const items = Object.entries(s.items || {});
     const kids = items.filter(([asin]) => asin !== s.parentAsin);
-    for (const [asin, it] of items) labels[asin] = asin === s.parentAsin ? 'Parent' : it.variant || it.title;
+    for (const [asin, it] of items) labels[asin] = asin === s.parentAsin && kids.length ? 'Parent' : it.variant || it.title;
     const prices = items.map(([, it]) => it.price?.buyBox).filter((v) => typeof v === 'number');
     const mine = changes.filter((c) => c.parentAsin === s.parentAsin && c.type !== 'baseline');
     const first = kids[0]?.[1] || s.items?.[s.parentAsin] || {};
@@ -52,26 +46,6 @@ export function siteData(dataDir, config) {
     status: readJson(path.join(dataDir, 'status.json'), {}),
     products,
     labels,
-    changes: changes.slice(-MAX_CHANGES_ON_SITE).reverse(),
+    changes: changes.slice(-MAX_CHANGES_ON_PAGE).reverse(),
   };
-}
-
-// fragment: true gives just the page body (used for previews); otherwise a complete web page.
-export function renderSite(data, { fragment = false } = {}) {
-  const template = fs.readFileSync(path.join(ROOT, 'src', 'site-template.html'), 'utf8');
-  const json = JSON.stringify(data).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
-  const page = template.replace('/*__DATA__*/null', () => json);
-  if (fragment) return page;
-  const split = page.indexOf('<div class="wrap">');
-  return `<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n<meta name="robots" content="noindex, nofollow">\n${page.slice(0, split)}</head>\n<body>\n${page.slice(split)}</body>\n</html>\n`;
-}
-
-export function buildSite(dataDir = path.join(ROOT, 'data'), config = readJson(path.join(ROOT, 'products.json'), {}), outDir = path.join(ROOT, 'site')) {
-  fs.mkdirSync(outDir, { recursive: true });
-  fs.writeFileSync(path.join(outDir, 'index.html'), renderSite(siteData(dataDir, config)));
-}
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  buildSite();
-  console.log('Built site/index.html');
 }

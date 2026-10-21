@@ -3,16 +3,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { fileURLToPath } from 'node:url';
-import { startFakeAmazon } from './fake-amazon.js';
-import { diffFamily, changedPart } from '../src/diff.js';
-import { parseAplus } from '../src/aplus.js';
-import { imageId, normalizePrice } from '../src/normalize.js';
-
-const run = promisify(execFile);
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+import { startFakeAmazon } from './helpers/fake-amazon.js';
+import { diffFamily, changedPart } from '../tools/competitor-tracker/diff.js';
+import { parseAplus } from '../tools/competitor-tracker/aplus.js';
+import { imageId, normalizePrice } from '../tools/competitor-tracker/normalize.js';
+import { runTracker } from '../tools/competitor-tracker/tracker.js';
+import { pageData } from '../tools/competitor-tracker/data.js';
+import { renderTrackerPage } from '../tools/competitor-tracker/page.js';
+import { isDue } from '../tools/competitor-tracker/index.js';
 
 test('imageId ignores size suffixes', () => {
   assert.equal(imageId('https://m.media-amazon.com/images/I/71abc+XYZ._AC_SL1500_.jpg'), '71abc+XYZ');
@@ -55,23 +53,23 @@ test('full run: baseline, then detects every kind of change', async () => {
   const server = await startFakeAmazon(state);
   const base = `http://127.0.0.1:${server.address().port}`;
   fs.writeFileSync(path.join(dir, 'products.json'), JSON.stringify({
-    settings: { checkEveryDays: 1, trackVariations: true, rankChangeAlertPercent: 25 },
+    settings: { checkEveryDays: 1, rankChangeAlertPercent: 25 }, // trackVariations left out on purpose: it defaults to on
     products: [{ asin: 'CHILD00001', nickname: 'Acme tables' }],
   }));
-  const env = {
-    ...process.env, FORCE_RUN: '1', TRACKER_FAST: '1',
-    TRACKER_DATA_DIR: path.join(dir, 'data'), TRACKER_PRODUCTS_FILE: path.join(dir, 'products.json'), TRACKER_SITE_DIR: path.join(dir, 'site'),
-    SPAPI_ENDPOINT: base, SPAPI_TOKEN_URL: base + '/auth', AMAZON_PAGE_BASE: base,
+  Object.assign(process.env, {
+    TRACKER_FAST: '1', SPAPI_ENDPOINT: base, SPAPI_TOKEN_URL: base + '/auth', AMAZON_PAGE_BASE: base,
     SPAPI_CLIENT_ID: 'id', SPAPI_CLIENT_SECRET: 'secret', SPAPI_REFRESH_TOKEN: 'refresh',
-  };
-  const track = () => run(process.execPath, [path.join(ROOT, 'src/tracker.js')], { env });
-  const changes = () => JSON.parse(fs.readFileSync(path.join(dir, 'data/changes.json'), 'utf8'));
+  });
+  const dataDir = path.join(dir, 'data');
+  const productsFile = path.join(dir, 'products.json');
+  const track = () => runTracker({ dataDir, productsFile, force: true });
+  const changes = () => JSON.parse(fs.readFileSync(path.join(dataDir, 'changes.json'), 'utf8'));
 
   try {
     // Day 1: a child ASIN was listed; the tracker should find the parent and save a baseline.
     await track();
     assert.deepEqual(changes().map((c) => c.type), ['baseline']);
-    const snap = JSON.parse(fs.readFileSync(path.join(dir, 'data/snapshots/PARENT0001.json'), 'utf8'));
+    const snap = JSON.parse(fs.readFileSync(path.join(dataDir, 'snapshots/PARENT0001.json'), 'utf8'));
     assert.deepEqual(Object.keys(snap.items).sort(), ['CHILD00001', 'CHILD00002', 'PARENT0001']);
     assert.equal(snap.aplus.status, 'ok');
     assert.deepEqual(snap.aplus.images, ['ap1', 'ap2'].map((id) => `https://m.media-amazon.com/images/S/aplus-media/${id}.jpg`));
@@ -106,11 +104,31 @@ test('full run: baseline, then detects every kind of change', async () => {
     await track();
     assert.equal(changes().length, before);
 
-    const html = fs.readFileSync(path.join(dir, 'site/index.html'), 'utf8');
-    assert.match(html, /<title>Competitor Watch<\/title>/);
-    assert.match(html, /Acme tables/);
+    const data = pageData(dataDir, JSON.parse(fs.readFileSync(productsFile, 'utf8')));
+    assert.equal(data.products[0].nickname, 'Acme tables');
+    assert.equal(data.products[0].childCount, 3);
+    assert.equal(data.changes[0].detectedAt >= data.changes.at(-1).detectedAt, true, 'newest first');
+    assert.match(renderTrackerPage(data).body, /Acme tables/);
   } finally {
     server.close();
     fs.rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('schedule: runs once a day after the chosen hour, honoring checkEveryDays', () => {
+  const settings = { checkAtHour: 9, timeZone: 'America/New_York', checkEveryDays: 1 };
+  const at = (iso) => new Date(iso);
+  assert.equal(isDue(settings, {}), true, 'first ever run starts right away');
+  const ran = { lastRunAt: '2026-10-14T13:20:00Z', lastSuccessAt: '2026-10-14T13:20:00Z' }; // 9:20 AM New York
+  assert.equal(isDue(settings, ran, at('2026-10-14T20:00:00Z')), false, 'already ran today');
+  assert.equal(isDue(settings, ran, at('2026-10-15T12:50:00Z')), false, '8:50 AM is before 9');
+  assert.equal(isDue(settings, ran, at('2026-10-15T13:10:00Z')), true, '9:10 AM next day');
+  assert.equal(isDue({ ...settings, checkEveryDays: 3 }, ran, at('2026-10-16T13:10:00Z')), false, 'only 2 days later');
+  assert.equal(isDue({ ...settings, checkEveryDays: 3 }, ran, at('2026-10-17T13:10:00Z')), true, '3 days later');
+});
+
+test('page data with a "</script>" inside A+ text cannot break the page', () => {
+  const { body } = renderTrackerPage({ base: '/x', products: [], labels: {}, status: {}, checkEveryDays: 1,
+    changes: [{ id: '1', detectedAt: '2026-10-01T00:00:00Z', type: 'aplus', summary: 'x', before: '</script><b>', after: null }] });
+  assert.equal(body.match(/<\/script>/g).length, 1);
 });

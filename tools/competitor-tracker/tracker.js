@@ -1,37 +1,22 @@
-// One tracker run: fetch every tracked product, compare with the last snapshot, log changes.
-// The Railway server (server.js) calls runTracker() on a schedule. It can also be run by hand:
-//   npm run track        (set FORCE_RUN=1 to ignore the "checkEveryDays" setting)
+// One Competitor Watch check: fetch every tracked product, compare with the last snapshot, log changes.
+// index.js calls runTracker() on a schedule and when someone clicks "Check now".
 
-import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readJson, writeJson } from '../../platform/storage.js';
 import { SpApi } from './spapi.js';
 import { normalizeItem, variationInfo } from './normalize.js';
 import { fetchAplus } from './aplus.js';
 import { diffFamily } from './diff.js';
-import { buildSite } from './build-site.js';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-// On Railway, data is saved on the attached volume so it survives restarts and redeploys.
-// The TRACKER_* overrides are used by the automated tests.
-export const DATA = process.env.TRACKER_DATA_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(ROOT, 'data');
-export const PRODUCTS_FILE = process.env.TRACKER_PRODUCTS_FILE || path.join(ROOT, 'products.json');
-const SITE_DIR = process.env.TRACKER_SITE_DIR || path.join(ROOT, 'site');
 const MAX_CHANGES_KEPT = 20000;
 const MAX_HISTORY_DAYS = 400;
 
-export const readJson = (file, fallback) => {
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
-};
-export const writeJson = (file, value) => {
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, JSON.stringify(value, null, 1) + '\n');
-};
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const isAsin = (s) => /^[A-Z0-9]{10}$/.test(s) && s !== 'B000000000';
 
-export async function runTracker({ force = false } = {}) {
-  const config = readJson(PRODUCTS_FILE, null);
+export async function runTracker({ dataDir, productsFile, force = false }) {
+  const DATA = dataDir;
+  const config = readJson(productsFile, null);
   if (!config) throw new Error('products.json is missing or is not valid JSON (check for a missing comma or quote).');
   const settings = config.settings || {};
   const watch = (config.products || [])
@@ -79,7 +64,7 @@ export async function runTracker({ force = false } = {}) {
     const v = variationInfo(catalog[fam.parentAsin], mp);
     fam.variations = { theme: v.theme, childAsins: v.childAsins };
     let kids = v.childAsins;
-    if (!settings.trackVariations) kids = kids.includes(fam.listedAsin) ? [fam.listedAsin] : kids.slice(0, 1);
+    if (settings.trackVariations === false) kids = kids.includes(fam.listedAsin) ? [fam.listedAsin] : kids.slice(0, 1);
     const max = Number(settings.maxChildrenPerParent) || 40;
     if (kids.length > max) errors.push(`${fam.parentAsin}: has ${kids.length} variations, only the first ${max} are tracked (raise maxChildrenPerParent to track more)`);
     fam.children = kids.slice(0, max);
@@ -127,13 +112,14 @@ export async function runTracker({ force = false } = {}) {
 
       const next = { parentAsin: fam.parentAsin, nickname: fam.nickname, checkedAt: now, variations: fam.variations, items, aplus };
       const found = prev ? diffFamily(prev, next, settings) : [];
-      if (!prev) found.push({ asin: fam.parentAsin, type: 'baseline', field: 'Tracking', summary: `Started tracking (${fam.children.length || 1} ASIN${fam.children.length === 1 ? '' : 's'})`, before: null, after: null });
+      const tracked = fam.children.length || 1;
+      if (!prev) found.push({ asin: fam.parentAsin, type: 'baseline', field: 'Tracking', summary: `Started tracking (${tracked} ASIN${tracked === 1 ? '' : 's'})`, before: null, after: null });
       found.forEach((c, i) => changes.push({ id: `${now}-${fam.parentAsin}-${i}`, detectedAt: now, parentAsin: fam.parentAsin, nickname: fam.nickname, ...c }));
       newChanges += found.length;
       console.log(`${fam.nickname} (${fam.parentAsin}): ${prev ? `${found.length} change(s)` : 'baseline saved'}`);
 
       writeJson(snapFile, next);
-      appendHistory(fam.parentAsin, now, items);
+      appendHistory(DATA, fam.parentAsin, now, items);
     } catch (err) {
       errors.push(`${fam.parentAsin}: ${err.message}`);
     }
@@ -151,7 +137,7 @@ export async function runTracker({ force = false } = {}) {
   errors.forEach((e) => console.log('  ! ' + e));
 }
 
-function appendHistory(parentAsin, now, items) {
+function appendHistory(DATA, parentAsin, now, items) {
   const file = path.join(DATA, 'history', `${parentAsin}.json`);
   const history = readJson(file, []);
   const row = { date: now.slice(0, 10), price: {}, rank: {} };
@@ -162,14 +148,4 @@ function appendHistory(parentAsin, now, items) {
   const kept = history.filter((h) => h.date !== row.date);
   kept.push(row);
   writeJson(file, kept.slice(-MAX_HISTORY_DAYS));
-}
-
-// Run by hand from the command line: also rebuilds site/index.html.
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  runTracker({ force: Boolean(process.env.FORCE_RUN) })
-    .then(() => buildSite(DATA, readJson(PRODUCTS_FILE, {}), SITE_DIR))
-    .catch((err) => {
-      console.error('Tracker failed: ' + err.message);
-      process.exit(1);
-    });
 }

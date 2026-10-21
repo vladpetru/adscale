@@ -31,6 +31,7 @@ export function parseAplus(html) {
       if (seen.has(el) || node.parents().toArray().some((p) => seen.has(p))) return; // skip nested duplicates
       seen.add(el);
       node.find('script, style, noscript').remove();
+      node.find('*').append(' '); // keeps words from neighboring blocks apart, e.g. a heading and its paragraph
       texts.push(node.text());
       node.find('img').each((__, img) => {
         const src = $(img).attr('data-src') || $(img).attr('src') || '';
