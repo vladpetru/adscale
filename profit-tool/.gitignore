@@ -1,4 +1,0 @@
-node_modules/
-.wrangler/
-# Local secrets. Real secrets live only in Cloudflare.
-.dev.vars
